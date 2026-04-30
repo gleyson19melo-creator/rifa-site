@@ -111,6 +111,8 @@
         card.className = 'rifa-item';
 
         const link = `/rifa.html?id=${rifa.id}`;
+        const linkCompleto = window.location.origin + link;
+        const mensagemWhatsApp = encodeURIComponent(`🍀 Olha minha rifa: ${rifa.nome}\n🎁 Prêmio: ${rifa.premio}\n💰 Valor: R$ ${rifa.valor}\n\nParticipe aqui: ${linkCompleto}`);
 
         card.innerHTML = `
           <div>
@@ -122,7 +124,13 @@
 
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
+
+            <a href="https://wa.me/?text=${mensagemWhatsApp}" target="_blank" class="btn-whatsapp">
+              WhatsApp
+            </a>
+
             <button class="btn-sortear" onclick="sortearRifa('${rifa.id}')">Sortear</button>
+
             <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir</button>
           </div>
         `;

@@ -129,6 +129,8 @@
         const card = document.createElement('div');
         card.className = 'rifa-home-card';
 
+        const linkRifa = `${window.location.origin}/rifa.html?id=${rifa.id}`;
+
         let statusRifa = '';
         let botoesRifa = '';
 
@@ -143,13 +145,18 @@
 
           botoesRifa = `
             <a href="/rifa.html?id=${rifa.id}" class="btn btn-resultado">Ver resultado 🏆</a>
-            <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}')">
+
+            <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}', '${linkRifa}')">
               Compartilhar resultado
             </button>
           `;
         } else {
           botoesRifa = `
             <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
+
+            <button class="btn-whatsapp" onclick="compartilharRifa('${rifa.nome}', '${rifa.premio || 'Não informado'}', '${rifa.valor}', '${linkRifa}')">
+              Compartilhar no WhatsApp
+            </button>
           `;
         }
 
@@ -166,8 +173,19 @@
       });
     }
 
-    function compartilharResultado(nomeRifa, numero, comprador) {
-      const texto = `🏆 Resultado da rifa ${nomeRifa}%0A🎉 Ganhador: ${comprador}%0A🍀 Número sorteado: ${numero}`;
+    function compartilharRifa(nomeRifa, premio, valor, link) {
+      const texto = encodeURIComponent(
+        `🍀 Participe dessa rifa!\n\n🎁 Rifa: ${nomeRifa}\n🏆 Prêmio: ${premio}\n💰 Valor: R$ ${valor}\n\n👉 Acesse aqui: ${link}`
+      );
+
+      window.open(`https://wa.me/?text=${texto}`, "_blank");
+    }
+
+    function compartilharResultado(nomeRifa, numero, comprador, link) {
+      const texto = encodeURIComponent(
+        `🏆 Resultado da rifa ${nomeRifa}\n\n🎉 Ganhador: ${comprador}\n🍀 Número sorteado: ${numero}\n\nVeja aqui: ${link}`
+      );
+
       window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 

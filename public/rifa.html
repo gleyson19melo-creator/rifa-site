@@ -163,14 +163,23 @@
       });
 
       const dados = await res.json();
-
       const resultado = document.getElementById('resultado');
 
       if (dados.sucesso) {
         const totalPagar = (Number(rifaAtual.valor) * Number(quantidade)).toFixed(2);
         const chavePix = rifaAtual.chavePix || 'Não informado';
 
-        const mensagem = `🍀 Compra confirmada%0A🎁 Rifa: ${rifaAtual.nome}%0A🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}%0A👤 Comprador: ${comprador}%0A📱 WhatsApp: ${whatsapp}%0A💰 Total: R$ ${totalPagar}%0A🔑 PIX: ${chavePix}%0A🎟️ ${dados.mensagem}`;
+        const mensagem = encodeURIComponent(
+          `🍀 Compra confirmada\n\n` +
+          `🎁 Rifa: ${rifaAtual.nome}\n` +
+          `🏆 Prêmio: ${rifaAtual.premio || 'Não informado'}\n` +
+          `👤 Comprador: ${comprador}\n` +
+          `📱 WhatsApp: ${whatsapp}\n` +
+          `💰 Total: R$ ${totalPagar}\n` +
+          `🔑 PIX: ${chavePix}\n` +
+          `🎟️ ${dados.mensagem}\n\n` +
+          `Comprovante enviado pelo participante.`
+        );
 
         resultado.innerHTML = `
           <p>${dados.mensagem}</p>
@@ -189,7 +198,7 @@
             </p>
           </div>
 
-          <a href="https://wa.me/?text=${mensagem}" target="_blank" class="btn">
+          <a href="https://wa.me/?text=${mensagem}" target="_blank" class="btn-whatsapp">
             Enviar comprovante no WhatsApp 📲
           </a>
         `;
@@ -198,7 +207,6 @@
       }
 
       resultado.style.display = "block";
-
       carregarRifa();
     }
 
@@ -212,7 +220,16 @@
         return;
       }
 
-      const texto = `🏆 Resultado da rifa ${rifaAtual.nome}%0A🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}%0A🎉 Ganhador: ${rifaAtual.ganhador.comprador}%0A🍀 Número sorteado: ${rifaAtual.ganhador.numero}`;
+      const link = window.location.href;
+
+      const texto = encodeURIComponent(
+        `🏆 Resultado da rifa ${rifaAtual.nome}\n\n` +
+        `🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}\n` +
+        `🎉 Ganhador: ${rifaAtual.ganhador.comprador}\n` +
+        `🍀 Número sorteado: ${rifaAtual.ganhador.numero}\n\n` +
+        `Veja aqui: ${link}`
+      );
+
       window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 

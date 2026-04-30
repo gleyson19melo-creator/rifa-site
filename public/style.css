@@ -752,3 +752,18 @@ input:focus {
   font-size: 14px;
   font-weight: bold;
 }
+
+/* AJUSTE WHATSAPP NO PAINEL */
+.rifa-actions .btn-whatsapp {
+  width: auto;
+  margin-top: 0;
+  padding: 14px 20px;
+}
+
+/* WHATSAPP GRANDE NAS OUTRAS PARTES */
+.rifa-home-card .btn-whatsapp,
+.resultado-final-rifa .btn-whatsapp,
+.resultado .btn-whatsapp {
+  width: 100%;
+  margin-top: 8px;
+}
