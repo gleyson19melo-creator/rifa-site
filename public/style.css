@@ -598,3 +598,52 @@ input:focus {
     align-items: flex-start;
   }
 }
+.resultado-sorteio {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5);
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 20px;
+  border-radius: 22px;
+  margin: 18px 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.resultado-sorteio span {
+  font-weight: bold;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.resultado-sorteio h3 {
+  margin: 4px 0 8px;
+  font-size: 24px;
+}
+
+.resultado-sorteio p {
+  margin: 4px 0;
+  color: #9a3412;
+}
+
+.resultado-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+
+.erro-sorteio {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.erro-sorteio p {
+  color: #991b1b;
+}
