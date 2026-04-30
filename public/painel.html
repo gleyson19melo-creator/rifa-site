@@ -29,6 +29,9 @@
           <label>Nome da rifa</label>
           <input type="text" placeholder="Ex: Rifa do iPhone" id="nome" required>
 
+          <label>Prêmio da rifa</label>
+          <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
+
           <label>Valor do número</label>
           <input type="number" placeholder="Ex: 5" id="valor" required>
 
@@ -115,6 +118,7 @@
         card.innerHTML = `
           <div>
             <h3>${rifa.nome}</h3>
+            <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
             <p>R$ ${rifa.valor} por número • ${rifa.quantidade} números</p>
             ${ganhadorTexto}
           </div>
@@ -134,13 +138,14 @@
       e.preventDefault();
 
       const nome = document.getElementById('nome').value;
+      const premio = document.getElementById('premio').value;
       const valor = document.getElementById('valor').value;
       const quantidade = document.getElementById('quantidade').value;
 
       const res = await fetch('/criar-rifa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, valor, quantidade, usuario })
+        body: JSON.stringify({ nome, premio, valor, quantidade, usuario })
       });
 
       const dados = await res.json();
@@ -159,9 +164,7 @@
     async function sortearGanhador(rifaId) {
       const confirmar = confirm("Tem certeza que deseja sortear o ganhador desta rifa?");
 
-      if (!confirmar) {
-        return;
-      }
+      if (!confirmar) return;
 
       const res = await fetch('/sortear-ganhador', {
         method: 'POST',

@@ -95,7 +95,7 @@
         <div>
           <strong>2</strong>
           <h3>Cadastre a rifa</h3>
-          <p>Informe nome, valor e quantidade de números.</p>
+          <p>Informe nome, prêmio, valor e quantidade de números.</p>
         </div>
 
         <div>
@@ -155,6 +155,7 @@
 
         card.innerHTML = `
           <h3>${rifa.nome}</h3>
+          <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
           <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
           <p>Total: ${rifa.quantidade} números</p>
           ${statusRifa}

@@ -66,7 +66,7 @@ app.post('/login', async (req, res) => {
 
 // Criar rifa
 app.post('/criar-rifa', async (req, res) => {
-  const { nome, valor, quantidade, usuario } = req.body;
+  const { nome, valor, quantidade, usuario, premio } = req.body;
 
   const numeros = [];
 
@@ -83,6 +83,7 @@ app.post('/criar-rifa', async (req, res) => {
     valor,
     quantidade,
     usuario,
+    premio: premio || 'Não informado',
     numeros,
     ganhador: null,
     criadoEm: Date.now()
