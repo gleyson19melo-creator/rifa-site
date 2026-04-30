@@ -2,20 +2,37 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h2>Entrar</h2>
 
-  <form id="formLogin">
-    <input type="email" placeholder="Email" id="email" required><br><br>
-    <input type="password" placeholder="Senha" id="senha" required><br><br>
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="auth-logo">🍀</div>
 
-    <button type="submit">Entrar</button>
-  </form>
+      <h1>Entrar no RifaPro</h1>
+      <p>Entre para criar, gerenciar e acompanhar suas rifas online.</p>
 
-  <p id="msg"></p>
+      <form id="formLogin">
+        <label>Email</label>
+        <input type="email" placeholder="Digite seu email" id="email" required>
+
+        <label>Senha</label>
+        <input type="password" placeholder="Digite sua senha" id="senha" required>
+
+        <button type="submit" class="auth-btn">Entrar agora</button>
+      </form>
+
+      <p id="msg" class="auth-msg"></p>
+
+      <div class="auth-footer">
+        Ainda não tem conta?
+        <a href="/cadastro.html">Criar conta</a>
+      </div>
+    </section>
+  </main>
 
   <script>
     const form = document.getElementById('formLogin');
@@ -41,5 +58,6 @@
       }
     });
   </script>
+
 </body>
 </html>

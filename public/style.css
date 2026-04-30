@@ -250,3 +250,80 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+/* LOGIN / CADASTRO */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(109, 40, 217, 0.18), transparent 35%),
+    #f4f6fb;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  padding: 35px;
+  border-radius: 28px;
+  box-shadow: 0 25px 70px rgba(0,0,0,0.12);
+}
+
+.auth-logo {
+  width: 62px;
+  height: 62px;
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+  color: white;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  margin-bottom: 18px;
+}
+
+.auth-card h1 {
+  font-size: 30px;
+  margin: 0 0 8px;
+}
+
+.auth-card p {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.auth-card label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.auth-card input {
+  margin-bottom: 16px;
+}
+
+.auth-btn {
+  width: 100%;
+  margin-top: 5px;
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+}
+
+.auth-msg {
+  margin-top: 18px;
+  font-weight: bold;
+  color: #2563eb;
+}
+
+.auth-footer {
+  margin-top: 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.auth-footer a {
+  color: #2563eb;
+  font-weight: bold;
+}
