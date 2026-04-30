@@ -114,7 +114,7 @@ app.get('/rifas/:usuario', async (req, res) => {
   res.json(rifas);
 });
 
-// Listar todas as rifas públicas
+// Listar rifas públicas
 app.get('/rifas-publicas', async (req, res) => {
   const snapshot = await db.collection('rifas').get();
 
@@ -130,13 +130,11 @@ app.get('/rifas-publicas', async (req, res) => {
   res.json(rifas);
 });
 
-// Buscar rifa por ID
+// Buscar rifa
 app.get('/rifa/:id', async (req, res) => {
   const doc = await db.collection('rifas').doc(req.params.id).get();
 
-  if (!doc.exists) {
-    return res.json(null);
-  }
+  if (!doc.exists) return res.json(null);
 
   res.json({
     id: doc.id,
@@ -144,7 +142,7 @@ app.get('/rifa/:id', async (req, res) => {
   });
 });
 
-// Comprar número aleatório
+// Comprar número
 app.post('/comprar-numero', async (req, res) => {
   const { rifaId, comprador } = req.body;
 
@@ -167,78 +165,60 @@ app.post('/comprar-numero', async (req, res) => {
 
   const numerosAtualizados = rifa.numeros.map(n => {
     if (n.numero === sorteado.numero) {
-      return {
-        ...n,
-        status: 'vendido',
-        comprador: comprador || 'Comprador'
-      };
+      return { ...n, status: 'vendido', comprador };
     }
-
     return n;
   });
 
-  await ref.update({
-    numeros: numerosAtualizados
-  });
+  await ref.update({ numeros: numerosAtualizados });
 
   res.json({
-    mensagem: `Compra realizada! Seu número é ${sorteado.numero} 🍀`,
-    sucesso: true,
-    numero: sorteado.numero
+    mensagem: `Compra realizada! Número ${sorteado.numero} 🍀`,
+    sucesso: true
   });
 });
 
-// Sortear ganhador da rifa
+// Sortear ganhador
 app.post('/sortear-ganhador', async (req, res) => {
   const { rifaId, usuario } = req.body;
 
   const ref = db.collection('rifas').doc(rifaId);
   const doc = await ref.get();
 
-  if (!doc.exists) {
-    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
-  }
+  if (!doc.exists) return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
 
   const rifa = doc.data();
 
   if (rifa.usuario !== usuario) {
-    return res.json({ mensagem: 'Você não tem permissão para sortear essa rifa ❌', sucesso: false });
+    return res.json({ mensagem: 'Sem permissão ❌', sucesso: false });
   }
 
   if (rifa.ganhador) {
-    return res.json({
-      mensagem: `Essa rifa já foi sorteada. Ganhador: número ${rifa.ganhador.numero} - ${rifa.ganhador.comprador} 🏆`,
-      sucesso: true,
-      ganhador: rifa.ganhador
-    });
+    return res.json({ mensagem: 'Já sorteada 🏆', sucesso: true });
   }
 
   const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
 
   if (vendidos.length === 0) {
-    return res.json({ mensagem: 'Ainda não tem números vendidos para sortear ❌', sucesso: false });
+    return res.json({ mensagem: 'Sem números vendidos ❌', sucesso: false });
   }
 
   const ganhador = vendidos[Math.floor(Math.random() * vendidos.length)];
 
-  const resultado = {
-    numero: ganhador.numero,
-    comprador: ganhador.comprador || 'Comprador',
-    sorteadoEm: Date.now()
-  };
-
   await ref.update({
-    ganhador: resultado
+    ganhador: {
+      numero: ganhador.numero,
+      comprador: ganhador.comprador
+    }
   });
 
   res.json({
-    mensagem: `Ganhador sorteado! Número ${resultado.numero} - ${resultado.comprador} 🏆`,
-    sucesso: true,
-    ganhador: resultado
+    mensagem: `Ganhador: ${ganhador.comprador} (${ganhador.numero}) 🏆`,
+    sucesso: true
   });
 });
 
-// Excluir rifa com segurança
+// 🔒 EXCLUIR RIFA (REGRA NOVA)
 app.delete('/excluir-rifa/:id', async (req, res) => {
   const id = req.params.id;
 
@@ -253,16 +233,17 @@ app.delete('/excluir-rifa/:id', async (req, res) => {
 
   const temVendidos = rifa.numeros.some(n => n.status === 'vendido');
 
-  if (temVendidos) {
+  // 🔥 REGRA INTELIGENTE
+  if (temVendidos && !rifa.ganhador) {
     return res.json({
-      mensagem: 'Essa rifa já tem números vendidos e não pode ser excluída ❌',
+      mensagem: 'Sorteie o ganhador antes de excluir ❌',
       sucesso: false
     });
   }
 
   await ref.delete();
 
-  res.json({ mensagem: 'Rifa excluída com sucesso 🗑️', sucesso: true });
+  res.json({ mensagem: 'Rifa excluída 🗑️', sucesso: true });
 });
 
 // Render
