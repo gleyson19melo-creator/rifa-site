@@ -184,6 +184,7 @@ app.post('/comprar-numero', async (req, res) => {
           comprador: comprador || 'Comprador'
         };
       }
+
       return n;
     });
 
@@ -206,7 +207,9 @@ app.post('/sortear-ganhador', async (req, res) => {
   const ref = db.collection('rifas').doc(rifaId);
   const doc = await ref.get();
 
-  if (!doc.exists) return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
 
   const rifa = doc.data();
 
@@ -236,6 +239,46 @@ app.post('/sortear-ganhador', async (req, res) => {
   res.json({
     mensagem: `Ganhador: ${ganhador.comprador} (${ganhador.numero}) 🏆`,
     sucesso: true
+  });
+});
+
+// Rota extra para o botão antigo de sortear funcionar
+app.get('/sortear-rifa/:id', async (req, res) => {
+  const id = req.params.id;
+
+  const ref = db.collection('rifas').doc(id);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (rifa.ganhador) {
+    return res.json({ mensagem: 'Já sorteada 🏆', sucesso: true });
+  }
+
+  const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
+
+  if (vendidos.length === 0) {
+    return res.json({ mensagem: 'Sem números vendidos ❌', sucesso: false });
+  }
+
+  const ganhador = vendidos[Math.floor(Math.random() * vendidos.length)];
+
+  await ref.update({
+    ganhador: {
+      numero: ganhador.numero,
+      comprador: ganhador.comprador
+    }
+  });
+
+  res.json({
+    mensagem: `Ganhador: ${ganhador.comprador} (${ganhador.numero}) 🏆`,
+    sucesso: true,
+    numero: ganhador.numero,
+    comprador: ganhador.comprador
   });
 });
 
