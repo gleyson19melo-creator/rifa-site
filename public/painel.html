@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,219 +9,309 @@
 </head>
 <body>
 
-<main class="dashboard-page">
+  <main class="dashboard-page">
 
-<header class="dashboard-header">
-  <div>
-    <span class="dash-badge">🍀 RifaPro</span>
-    <h1>Painel do Usuário</h1>
-    <p id="usuarioLogado"></p>
-  </div>
+    <header class="dashboard-header">
+      <div>
+        <span class="dash-badge">🍀 RifaPro</span>
+        <h1>Painel do Usuário</h1>
+        <p id="usuarioLogado"></p>
+      </div>
 
-  <button class="btn-sair" onclick="sair()">Sair</button>
-</header>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </header>
 
-<section class="dashboard-grid">
-  <div class="dash-card form-card">
-    <h2>Criar nova rifa</h2>
+    <section class="dashboard-grid">
+      <div class="dash-card form-card">
+        <h2>Criar nova rifa</h2>
+        <p>Preencha os dados abaixo para gerar sua rifa online.</p>
 
-    <form id="formRifa">
-      <input type="text" placeholder="Nome da rifa" id="nome" required>
-      <input type="text" placeholder="Prêmio" id="premio" required>
-      <input type="text" placeholder="Valor" id="valor" required>
-      <input type="number" placeholder="Quantidade" id="quantidade" required>
-      <input type="text" placeholder="Chave PIX" id="chavePix" required>
+        <form id="formRifa">
+          <label>Nome da rifa</label>
+          <input type="text" placeholder="Ex: Rifa do iPhone" id="nome" required>
 
-      <button type="submit" class="btn-criar">Criar</button>
-    </form>
+          <label>Prêmio da rifa</label>
+          <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
 
-    <p id="msg"></p>
-  </div>
+          <label>Valor do número</label>
+          <input type="text" placeholder="Ex: 0,50" id="valor" required>
 
-  <div class="dash-card">
-    <h2>Resumo</h2>
-    <p>Rifas: <strong id="totalRifas">0</strong></p>
-  </div>
-</section>
+          <label>Quantidade de números</label>
+          <input type="number" placeholder="Ex: 100" id="quantidade" required>
 
-<section class="dash-card">
-  <h2>Minhas rifas</h2>
-  <div id="lista"></div>
-</section>
+          <label>Chave PIX</label>
+          <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
 
-</main>
+          <button type="submit" class="btn-criar">Criar rifa</button>
+        </form>
 
-<script>
-const form = document.getElementById('formRifa');
-const lista = document.getElementById('lista');
-const usuario = localStorage.getItem('usuario');
+        <p id="msg" class="dash-msg"></p>
+      </div>
 
-if (!usuario) {
-  window.location.replace("/login.html");
-}
+      <div class="dash-card info-card">
+        <h2>Resumo</h2>
 
-document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
-
-async function carregarRifas() {
-  const res = await fetch(`/rifas/${usuario}`);
-  const rifas = await res.json();
-
-  lista.innerHTML = '';
-  document.getElementById('totalRifas').innerText = rifas.length;
-
-  rifas.forEach(rifa => {
-    const card = document.createElement('div');
-    card.className = 'rifa-item';
-
-    const pendentes = rifa.numeros.filter(n => n.status === 'pendente');
-    const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
-
-    let mensagemGanhador = '';
-
-    if (rifa.ganhador) {
-      const textoWhatsApp = encodeURIComponent(
-        `🏆 Resultado da rifa!\n\n` +
-        `🎁 Rifa: ${rifa.nome}\n` +
-        `🎁 Prêmio: ${rifa.premio || 'Não informado'}\n` +
-        `👤 Ganhador: ${rifa.ganhador.comprador}\n` +
-        `🎟️ Número sorteado: ${rifa.ganhador.numero}\n\n` +
-        `Parabéns! Você foi o ganhador da rifa 🍀`
-      );
-
-      mensagemGanhador = `
-        <div style="margin-top:12px; padding:12px; background:#dcfce7; border-radius:12px; color:#166534; font-weight:bold;">
-          🏆 Ganhador: ${rifa.ganhador.comprador}<br>
-          🎟️ Número: ${rifa.ganhador.numero}<br><br>
-
-          <a class="btn-whatsapp" href="https://wa.me/?text=${textoWhatsApp}" target="_blank">
-            Enviar resultado no WhatsApp 📲
-          </a>
+        <div class="stat">
+          <span>Minhas rifas</span>
+          <strong id="totalRifas">0</strong>
         </div>
-      `;
+
+        <div class="stat">
+          <span>Status</span>
+          <strong>Ativo</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-card">
+      <div class="section-title">
+        <div>
+          <h2>Minhas rifas</h2>
+          <p>Gerencie, compartilhe e sorteie suas rifas criadas.</p>
+        </div>
+      </div>
+
+      <div id="lista" class="rifas-lista"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const form = document.getElementById('formRifa');
+    const lista = document.getElementById('lista');
+    const usuario = localStorage.getItem('usuario');
+
+    if (!usuario) {
+      window.location.replace("/login.html");
     }
 
-    card.innerHTML = `
-      <div>
-        <h3>${rifa.nome}</h3>
+    document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
 
-        <p>🎁 Prêmio: ${rifa.premio || 'Não informado'}</p>
-        <p>💰 Valor: R$ ${rifa.valor}</p>
-        <p>Vendidos: ${vendidos.length}</p>
-        <p>Pendentes: ${pendentes.length}</p>
+    const campoValor = document.getElementById('valor');
 
-        ${mensagemGanhador}
+    campoValor.addEventListener('input', () => {
+      let valor = campoValor.value.replace(/\D/g, '');
+      valor = (Number(valor) / 100).toFixed(2);
+      valor = valor.replace('.', ',');
+      campoValor.value = valor;
+    });
 
-        ${!rifa.ganhador ? `
-          <button onclick="sortear('${rifa.id}')">Sortear</button>
-        ` : ''}
-      </div>
+    async function carregarRifas() {
+      const res = await fetch(`/rifas/${usuario}`);
+      const rifas = await res.json();
 
-      <div>
-        ${pendentes.map(n => `
-          <div style="margin-top:10px; padding:10px; background:#fff3cd; border-radius:12px;">
-            <strong>⏳ Número ${n.numero}</strong><br>
-            Cliente: ${n.comprador}<br>
-            WhatsApp: ${n.whatsapp || 'Não informado'}<br><br>
+      lista.innerHTML = '';
+      document.getElementById('totalRifas').innerText = rifas.length;
 
-            <button onclick="confirmar('${rifa.id}', ${n.numero})">
-              Confirmar pagamento
-            </button>
+      rifas.forEach(rifa => {
+        const card = document.createElement('div');
+        card.className = 'rifa-item';
 
-            <button onclick="cancelar('${rifa.id}', ${n.numero})">
-              Cancelar
-            </button>
+        const link = `/rifa.html?id=${rifa.id}`;
+        const linkCompleto = window.location.origin + link;
+
+        const numeros = rifa.numeros || [];
+        const vendidos = numeros.filter(n => n.status === 'vendido');
+        const pendentes = numeros.filter(n => n.status === 'pendente');
+        const disponiveis = numeros.filter(n => n.status === 'disponivel');
+        const total = Number(rifa.quantidade) || numeros.length || 0;
+        const porcentagem = total > 0 ? (vendidos.length / total) * 100 : 0;
+
+        const mensagemWhatsApp = encodeURIComponent(
+          `🍀 Olha minha rifa: ${rifa.nome}\n` +
+          `🎁 Prêmio: ${rifa.premio || 'Não informado'}\n` +
+          `💰 Valor: R$ ${rifa.valor}\n\n` +
+          `Participe aqui: ${linkCompleto}`
+        );
+
+        let resultadoGanhador = '';
+
+        if (rifa.ganhador) {
+          const textoResultado = encodeURIComponent(
+            `🏆 Resultado da rifa!\n\n` +
+            `🎁 Rifa: ${rifa.nome}\n` +
+            `🎁 Prêmio: ${rifa.premio || 'Não informado'}\n` +
+            `👤 Ganhador: ${rifa.ganhador.comprador}\n` +
+            `🎟️ Número sorteado: ${rifa.ganhador.numero}\n\n` +
+            `Parabéns! Você foi o ganhador da rifa 🍀`
+          );
+
+          resultadoGanhador = `
+            <div class="ganhador-home">
+              <span class="badge-finalizada">FINALIZADA</span><br><br>
+              🏆 Ganhador: ${rifa.ganhador.comprador}<br>
+              🎟️ Número: ${rifa.ganhador.numero}<br><br>
+
+              <a class="btn-whatsapp" href="https://wa.me/?text=${textoResultado}" target="_blank">
+                Enviar resultado no WhatsApp 📲
+              </a>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="rifa-info-painel">
+            <h3>${rifa.nome}</h3>
+            <p>🎁 ${rifa.premio || 'Não informado'}</p>
+            <p>💰 R$ ${rifa.valor}</p>
+            <p>📲 PIX: ${rifa.chavePix || 'Não informado'}</p>
+
+            <div class="vendas-resumo">
+              <div>
+                <span>Vendidos</span>
+                <strong>${vendidos.length}</strong>
+              </div>
+
+              <div>
+                <span>Pendentes</span>
+                <strong>${pendentes.length}</strong>
+              </div>
+
+              <div>
+                <span>Total</span>
+                <strong>${total}</strong>
+              </div>
+            </div>
+
+            <div class="progresso-vendas">
+              <div style="width: ${porcentagem}%"></div>
+            </div>
+
+            ${resultadoGanhador}
+
+            ${pendentes.map(n => `
+              <div style="margin-top:10px; padding:12px; background:#fff3cd; border-radius:12px;">
+                <strong>⏳ Número ${n.numero}</strong><br>
+                Cliente: ${n.comprador || 'Não informado'}<br>
+                WhatsApp: ${n.whatsapp || 'Não informado'}<br><br>
+
+                <button onclick="confirmar('${rifa.id}', ${n.numero})">
+                  Confirmar pagamento
+                </button>
+
+                <button onclick="cancelar('${rifa.id}', ${n.numero})">
+                  Cancelar
+                </button>
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
-      </div>
-    `;
 
-    lista.appendChild(card);
-  });
-}
+          <div class="rifa-actions">
+            <a href="${link}" target="_blank" class="btn">Ver rifa</a>
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+            <a href="https://wa.me/?text=${mensagemWhatsApp}" target="_blank" class="btn-whatsapp">
+              WhatsApp
+            </a>
 
-  const nome = document.getElementById('nome').value;
-  const premio = document.getElementById('premio').value;
-  const valor = document.getElementById('valor').value.replace(',', '.');
-  const quantidade = document.getElementById('quantidade').value;
-  const chavePix = document.getElementById('chavePix').value;
+            <button class="btn-sortear" onclick="sortear('${rifa.id}')" ${rifa.ganhador ? 'disabled' : ''}>
+              ${rifa.ganhador ? 'Já sorteada 🏆' : 'Sortear'}
+            </button>
 
-  const res = await fetch('/criar-rifa', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nome,
-      premio,
-      valor,
-      quantidade,
-      usuario,
-      chavePix
-    })
-  });
+            <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir</button>
+          </div>
+        `;
 
-  const dados = await res.json();
-  document.getElementById('msg').innerText = dados.mensagem;
+        lista.appendChild(card);
+      });
+    }
 
-  form.reset();
-  carregarRifas();
-});
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-async function confirmar(rifaId, numero) {
-  const res = await fetch('/confirmar-pagamento', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      rifaId,
-      numero,
-      usuario
-    })
-  });
+      const nome = document.getElementById('nome').value;
+      const premio = document.getElementById('premio').value;
+      const valor = document.getElementById('valor').value.replace(',', '.');
+      const quantidade = document.getElementById('quantidade').value;
+      const chavePix = document.getElementById('chavePix').value;
 
-  const dados = await res.json();
-  alert(dados.mensagem);
-  carregarRifas();
-}
+      const res = await fetch('/criar-rifa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome,
+          premio,
+          valor,
+          quantidade,
+          usuario,
+          chavePix
+        })
+      });
 
-async function cancelar(rifaId, numero) {
-  const res = await fetch('/cancelar-reserva', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      rifaId,
-      numero,
-      usuario
-    })
-  });
+      const dados = await res.json();
+      document.getElementById('msg').innerText = dados.mensagem;
 
-  const dados = await res.json();
-  alert(dados.mensagem);
-  carregarRifas();
-}
+      form.reset();
+      carregarRifas();
+    });
 
-async function sortear(id) {
-  const confirmarSorteio = confirm("Tem certeza que quer sortear essa rifa?");
-  if (!confirmarSorteio) return;
+    async function confirmar(rifaId, numero) {
+      const res = await fetch('/confirmar-pagamento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rifaId,
+          numero,
+          usuario
+        })
+      });
 
-  const res = await fetch('/sortear-ganhador', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ rifaId: id, usuario })
-  });
+      const dados = await res.json();
+      alert(dados.mensagem);
+      carregarRifas();
+    }
 
-  const dados = await res.json();
-  alert(dados.mensagem);
-  carregarRifas();
-}
+    async function cancelar(rifaId, numero) {
+      const res = await fetch('/cancelar-reserva', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rifaId,
+          numero,
+          usuario
+        })
+      });
 
-function sair() {
-  localStorage.removeItem('usuario');
-  window.location.replace("/login.html");
-}
+      const dados = await res.json();
+      alert(dados.mensagem);
+      carregarRifas();
+    }
 
-carregarRifas();
-</script>
+    async function sortear(id) {
+      const confirmarSorteio = confirm("Tem certeza que quer sortear essa rifa?");
+      if (!confirmarSorteio) return;
+
+      const res = await fetch('/sortear-ganhador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rifaId: id, usuario })
+      });
+
+      const dados = await res.json();
+      alert(dados.mensagem);
+      carregarRifas();
+    }
+
+    async function excluirRifa(id) {
+      const confirmar = confirm("Tem certeza que quer excluir essa rifa?");
+      if (!confirmar) return;
+
+      const res = await fetch(`/excluir-rifa/${id}`, {
+        method: 'DELETE'
+      });
+
+      const dados = await res.json();
+      alert(dados.mensagem || "Rifa excluída com sucesso!");
+
+      carregarRifas();
+    }
+
+    function sair() {
+      localStorage.removeItem('usuario');
+      window.location.replace("/login.html");
+    }
+
+    carregarRifas();
+  </script>
 
 </body>
 </html>
