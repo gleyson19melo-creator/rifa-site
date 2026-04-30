@@ -165,7 +165,20 @@
       const dados = await res.json();
 
       const resultado = document.getElementById('resultado');
-      resultado.innerText = dados.mensagem;
+
+      if (dados.sucesso) {
+        const mensagem = `🍀 Compra confirmada%0A🎁 Rifa: ${rifaAtual.nome}%0A🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}%0A👤 Comprador: ${comprador}%0A📱 WhatsApp: ${whatsapp}%0A🎟️ ${dados.mensagem}`;
+
+        resultado.innerHTML = `
+          <p>${dados.mensagem}</p>
+          <a href="https://wa.me/?text=${mensagem}" target="_blank" class="btn">
+            Enviar no WhatsApp 📲
+          </a>
+        `;
+      } else {
+        resultado.innerText = dados.mensagem;
+      }
+
       resultado.style.display = "block";
 
       carregarRifa();
@@ -184,4 +197,4 @@
   </script>
 
 </body>
-</html>>
+</html>
