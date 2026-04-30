@@ -75,6 +75,11 @@ app.get('/rifas/:usuario', (req, res) => {
   res.json(minhasRifas);
 });
 
+// Listar todas as rifas públicas na tela inicial
+app.get('/rifas-publicas', (req, res) => {
+  res.json(rifas);
+});
+
 // Buscar rifa por ID
 app.get('/rifa/:id', (req, res) => {
   const id = Number(req.params.id);

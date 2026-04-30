@@ -45,7 +45,7 @@
           <strong>R$ 5,00</strong>
         </div>
 
-        <h3>Rifa do prêmio especial</h3>
+        <h3>Sua rifa pode aparecer assim</h3>
 
         <div class="preview-numbers">
           <span>07</span>
@@ -54,8 +54,16 @@
           <span>42</span>
         </div>
 
-        <button>Comprar número 🍀</button>
+        <a href="/cadastro.html" class="btn">Criar minha rifa</a>
       </div>
+    </section>
+
+    <!-- 🔥 NOVA PARTE -->
+    <section class="rifas-publicas">
+      <h2>Rifas disponíveis</h2>
+      <p>Escolha uma rifa e compre seus números automaticamente.</p>
+
+      <div id="rifasDisponiveis" class="rifas-home-lista"></div>
     </section>
 
     <section class="features">
@@ -104,6 +112,38 @@
     </footer>
 
   </main>
+
+  <!-- 🔥 SCRIPT DAS RIFAS -->
+  <script>
+    async function carregarRifasPublicas() {
+      const res = await fetch('/rifas-publicas');
+      const rifas = await res.json();
+
+      const lista = document.getElementById('rifasDisponiveis');
+      lista.innerHTML = '';
+
+      if (rifas.length === 0) {
+        lista.innerHTML = '<p>Nenhuma rifa disponível no momento.</p>';
+        return;
+      }
+
+      rifas.forEach(rifa => {
+        const card = document.createElement('div');
+        card.className = 'rifa-home-card';
+
+        card.innerHTML = `
+          <h3>${rifa.nome}</h3>
+          <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
+          <p>Total: ${rifa.quantidade} números</p>
+          <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
+        `;
+
+        lista.appendChild(card);
+      });
+    }
+
+    carregarRifasPublicas();
+  </script>
 
 </body>
 </html>
