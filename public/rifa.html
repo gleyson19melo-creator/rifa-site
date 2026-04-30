@@ -167,12 +167,30 @@
       const resultado = document.getElementById('resultado');
 
       if (dados.sucesso) {
-        const mensagem = `🍀 Compra confirmada%0A🎁 Rifa: ${rifaAtual.nome}%0A🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}%0A👤 Comprador: ${comprador}%0A📱 WhatsApp: ${whatsapp}%0A🎟️ ${dados.mensagem}`;
+        const totalPagar = (Number(rifaAtual.valor) * Number(quantidade)).toFixed(2);
+        const chavePix = rifaAtual.chavePix || 'Não informado';
+
+        const mensagem = `🍀 Compra confirmada%0A🎁 Rifa: ${rifaAtual.nome}%0A🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}%0A👤 Comprador: ${comprador}%0A📱 WhatsApp: ${whatsapp}%0A💰 Total: R$ ${totalPagar}%0A🔑 PIX: ${chavePix}%0A🎟️ ${dados.mensagem}`;
 
         resultado.innerHTML = `
           <p>${dados.mensagem}</p>
+
+          <div class="pix-box">
+            <h3>💸 Pagamento via PIX</h3>
+            <p><strong>Total:</strong> R$ ${totalPagar}</p>
+            <p><strong>Chave PIX:</strong> ${chavePix}</p>
+
+            <button onclick="copiarPix('${chavePix}')">
+              Copiar chave PIX 📋
+            </button>
+
+            <p class="aviso-pix">
+              Após o pagamento, envie o comprovante para o dono da rifa.
+            </p>
+          </div>
+
           <a href="https://wa.me/?text=${mensagem}" target="_blank" class="btn">
-            Enviar no WhatsApp 📲
+            Enviar comprovante no WhatsApp 📲
           </a>
         `;
       } else {
@@ -182,6 +200,11 @@
       resultado.style.display = "block";
 
       carregarRifa();
+    }
+
+    function copiarPix(chave) {
+      navigator.clipboard.writeText(chave);
+      alert("Chave PIX copiada!");
     }
 
     function compartilharResultado() {

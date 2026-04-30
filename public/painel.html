@@ -33,11 +33,14 @@
           <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
 
           <label>Valor do número</label>
-          <!-- 🔥 ALTERADO -->
           <input type="text" placeholder="Ex: 0,50" id="valor" required>
 
           <label>Quantidade de números</label>
           <input type="number" placeholder="Ex: 100" id="quantidade" required>
+
+          <!-- 🔥 NOVO CAMPO PIX -->
+          <label>Chave PIX</label>
+          <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
 
           <button type="submit" class="btn-criar">Criar rifa</button>
         </form>
@@ -93,11 +96,8 @@
 
     campoValor.addEventListener('input', () => {
       let valor = campoValor.value.replace(/\D/g, '');
-
       valor = (Number(valor) / 100).toFixed(2);
-
       valor = valor.replace('.', ',');
-
       campoValor.value = valor;
     });
 
@@ -108,68 +108,22 @@
       lista.innerHTML = '';
       document.getElementById('totalRifas').innerText = rifas.length;
 
-      if (rifas.length === 0) {
-        lista.innerHTML = `<div class="empty">Você ainda não criou nenhuma rifa.</div>`;
-        return;
-      }
-
       rifas.forEach(rifa => {
         const card = document.createElement('div');
         card.className = 'rifa-item';
 
         const link = `/rifa.html?id=${rifa.id}`;
 
-        const vendidos = rifa.numeros.filter(n => n.status === 'vendido').length;
-        const total = Number(rifa.quantidade);
-        const valor = Number(rifa.valor);
-        const arrecadado = vendidos * valor;
-        const percentual = total > 0 ? Math.round((vendidos / total) * 100) : 0;
-
-        let ganhadorTexto = '';
-
-        if (rifa.ganhador) {
-          ganhadorTexto = `
-            <p class="ganhador-texto">
-              🏆 Ganhador: número ${rifa.ganhador.numero} - ${rifa.ganhador.comprador}
-            </p>
-          `;
-        }
-
         card.innerHTML = `
-          <div class="rifa-info-painel">
+          <div>
             <h3>${rifa.nome}</h3>
-            <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
-            <p>R$ ${rifa.valor} por número • ${rifa.quantidade} números</p>
-
-            <div class="vendas-resumo">
-              <div>
-                <span>Vendidos</span>
-                <strong>${vendidos}</strong>
-              </div>
-
-              <div>
-                <span>Arrecadado</span>
-                <strong>R$ ${arrecadado.toFixed(2)}</strong>
-              </div>
-
-              <div>
-                <span>Progresso</span>
-                <strong>${percentual}%</strong>
-              </div>
-            </div>
-
-            <div class="progresso-vendas">
-              <div style="width: ${percentual}%"></div>
-            </div>
-
-            ${ganhadorTexto}
+            <p>🎁 ${rifa.premio}</p>
+            <p>💰 R$ ${rifa.valor}</p>
+            <p>📲 PIX: ${rifa.chavePix || 'Não informado'}</p>
           </div>
 
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
-            <button onclick="copiarLink('${link}')">Copiar link</button>
-            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}')">Sortear 🏆</button>
-            <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir 🗑️</button>
           </div>
         `;
 
@@ -182,16 +136,21 @@
 
       const nome = document.getElementById('nome').value;
       const premio = document.getElementById('premio').value;
-
-      // 🔥 CONVERSÃO CORRETA
       const valor = document.getElementById('valor').value.replace(',', '.');
-
       const quantidade = document.getElementById('quantidade').value;
+      const chavePix = document.getElementById('chavePix').value;
 
       const res = await fetch('/criar-rifa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, premio, valor, quantidade, usuario })
+        body: JSON.stringify({
+          nome,
+          premio,
+          valor,
+          quantidade,
+          usuario,
+          chavePix
+        })
       });
 
       const dados = await res.json();
@@ -201,53 +160,13 @@
       carregarRifas();
     });
 
-    function copiarLink(link) {
-      const urlCompleta = window.location.origin + link;
-      navigator.clipboard.writeText(urlCompleta);
-      alert("Link copiado!");
-    }
-
-    async function sortearGanhador(rifaId) {
-      const confirmar = confirm("Sortear ganhador?");
-      if (!confirmar) return;
-
-      const res = await fetch('/sortear-ganhador', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rifaId, usuario })
-      });
-
-      const dados = await res.json();
-      alert(dados.mensagem);
-      carregarRifas();
-    }
-
-    async function excluirRifa(rifaId) {
-      const confirmar = confirm("Tem certeza que deseja excluir essa rifa?");
-      if (!confirmar) return;
-
-      const res = await fetch(`/excluir-rifa/${rifaId}`, {
-        method: 'DELETE'
-      });
-
-      const dados = await res.json();
-      alert(dados.mensagem);
-      carregarRifas();
-    }
-
     function sair() {
       localStorage.removeItem('usuario');
       window.location.replace("/login.html");
     }
 
-    window.addEventListener('pageshow', () => {
-      const usuarioAtual = localStorage.getItem('usuario');
-      if (!usuarioAtual) {
-        window.location.replace("/login.html");
-      }
-    });
-
     carregarRifas();
   </script>
+
 </body>
 </html>

@@ -717,3 +717,24 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+.pix-box {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  padding: 16px;
+  border-radius: 16px;
+  margin: 15px 0;
+  color: #065f46;
+}
+
+.pix-box h3 {
+  margin-top: 0;
+}
+
+.pix-box p {
+  color: #065f46;
+}
+
+.aviso-pix {
+  font-size: 14px;
+  font-weight: bold;
+}

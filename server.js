@@ -66,7 +66,7 @@ app.post('/login', async (req, res) => {
 
 // Criar rifa
 app.post('/criar-rifa', async (req, res) => {
-  const { nome, valor, quantidade, usuario, premio } = req.body;
+  const { nome, valor, quantidade, usuario, premio, chavePix } = req.body;
 
   const numeros = [];
 
@@ -84,6 +84,7 @@ app.post('/criar-rifa', async (req, res) => {
     quantidade,
     usuario,
     premio: premio || 'Não informado',
+    chavePix: chavePix || 'Não informado',
     numeros,
     ganhador: null,
     criadoEm: Date.now()
@@ -142,7 +143,7 @@ app.get('/rifa/:id', async (req, res) => {
   });
 });
 
-// 🔥 COMPRA VÁRIOS NÚMEROS
+// Comprar vários números
 app.post('/comprar-numero', async (req, res) => {
   const { rifaId, comprador, quantidade } = req.body;
 
