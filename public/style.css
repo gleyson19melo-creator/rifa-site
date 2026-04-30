@@ -448,6 +448,18 @@ input:focus {
   background: linear-gradient(135deg, #f59e0b, #f97316);
 }
 
+.btn-sortear:hover {
+  background: #ea580c;
+}
+
+.btn-excluir {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.btn-excluir:hover {
+  background: #b91c1c;
+}
+
 .ganhador-texto {
   margin-top: 8px !important;
   color: #166534 !important;
@@ -669,6 +681,7 @@ input:focus {
     width: 100%;
   }
 }
+
 .rifa-info-painel {
   width: 100%;
 }
@@ -717,6 +730,7 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+
 .pix-box {
   background: #ecfdf5;
   border: 1px solid #10b981;

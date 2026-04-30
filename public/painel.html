@@ -38,7 +38,6 @@
           <label>Quantidade de números</label>
           <input type="number" placeholder="Ex: 100" id="quantidade" required>
 
-          <!-- 🔥 NOVO CAMPO PIX -->
           <label>Chave PIX</label>
           <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
 
@@ -91,7 +90,6 @@
 
     document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
 
-    // 💰 MÁSCARA DE VALOR
     const campoValor = document.getElementById('valor');
 
     campoValor.addEventListener('input', () => {
@@ -124,6 +122,8 @@
 
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
+            <button class="btn-sortear" onclick="sortearRifa('${rifa.id}')">Sortear</button>
+            <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir</button>
           </div>
         `;
 
@@ -159,6 +159,28 @@
       form.reset();
       carregarRifas();
     });
+
+    async function excluirRifa(id) {
+      const confirmar = confirm("Tem certeza que quer excluir essa rifa?");
+
+      if (!confirmar) return;
+
+      const res = await fetch(`/excluir-rifa/${id}`, {
+        method: 'DELETE'
+      });
+
+      const dados = await res.json();
+      alert(dados.mensagem || "Rifa excluída com sucesso!");
+
+      carregarRifas();
+    }
+
+    async function sortearRifa(id) {
+      const res = await fetch(`/sortear-rifa/${id}`);
+      const dados = await res.json();
+
+      alert(dados.mensagem || `Número sorteado: ${dados.numero}`);
+    }
 
     function sair() {
       localStorage.removeItem('usuario');
