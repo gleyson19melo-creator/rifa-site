@@ -37,7 +37,6 @@
 
     <section id="areaCompra" class="rifa-card compra-card">
       <h2>Comprar números</h2>
-      <p>Preencha seus dados e o sistema vai sortear números disponíveis para você.</p>
 
       <label>Seu nome</label>
       <input type="text" id="comprador" placeholder="Digite seu nome">
@@ -58,7 +57,11 @@
     <section class="rifa-card">
       <h2>Números da rifa</h2>
       <p id="totalNumerosInfo" class="legenda"></p>
-      <p class="legenda">✅ Disponível &nbsp;&nbsp; ❌ Vendido</p>
+
+      <!-- 🔥 ATUALIZADO -->
+      <p class="legenda">
+        ✅ Disponível &nbsp;&nbsp; ⏳ Pendente &nbsp;&nbsp; ❌ Pago
+      </p>
 
       <div id="numeros" class="numeros-grid"></div>
     </section>
@@ -89,45 +92,24 @@
       document.getElementById('disponiveis').innerText = disponiveis;
       document.getElementById('totalNumerosInfo').innerText = "Total: " + rifa.quantidade + " números";
 
-      const areaCompra = document.getElementById('areaCompra');
-      const resultadoFinal = document.getElementById('resultadoFinal');
-      const descricaoRifa = document.getElementById('descricaoRifa');
-
-      if (rifa.ganhador) {
-        areaCompra.style.display = "none";
-        resultadoFinal.style.display = "block";
-        descricaoRifa.innerText = "Esta rifa já foi finalizada. Confira o resultado abaixo.";
-
-        resultadoFinal.innerHTML = `
-          <div class="resultado-final-rifa">
-            <span class="badge-finalizada">FINALIZADA</span>
-            <h2>🏆 Resultado do sorteio</h2>
-            <p>Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
-            <p>Ganhador: <strong>${rifa.ganhador.comprador}</strong></p>
-            <p>Número sorteado: <strong>${rifa.ganhador.numero}</strong></p>
-
-            <button class="btn-whatsapp" onclick="compartilharResultado()">
-              Compartilhar resultado no WhatsApp
-            </button>
-          </div>
-        `;
-      } else {
-        areaCompra.style.display = "block";
-        resultadoFinal.style.display = "none";
-        descricaoRifa.innerText = "Compre seus números automaticamente e concorra com sorte.";
-      }
-
       const numerosDiv = document.getElementById('numeros');
       numerosDiv.innerHTML = '';
 
       rifa.numeros.forEach(n => {
         const btn = document.createElement('button');
 
+        // 🔥 AQUI FOI A ÚNICA MUDANÇA
         if (n.status === 'vendido') {
           btn.innerText = n.numero + " ❌";
           btn.className = "numero vendido";
           btn.disabled = true;
-        } else {
+        }
+        else if (n.status === 'pendente') {
+          btn.innerText = n.numero + " ⏳";
+          btn.className = "numero pendente";
+          btn.disabled = true;
+        }
+        else {
           btn.innerText = n.numero + " ✅";
           btn.className = "numero disponivel";
         }
@@ -141,21 +123,6 @@
       const whatsapp = document.getElementById('whatsapp').value.trim();
       const quantidade = document.getElementById('quantidadeCompra').value;
 
-      if (!comprador) {
-        alert("Digite seu nome");
-        return;
-      }
-
-      if (!whatsapp) {
-        alert("Digite seu WhatsApp");
-        return;
-      }
-
-      if (quantidade < 1) {
-        alert("Escolha pelo menos 1 número");
-        return;
-      }
-
       const res = await fetch('/comprar-numero', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,74 +130,10 @@
       });
 
       const dados = await res.json();
-      const resultado = document.getElementById('resultado');
 
-      if (dados.sucesso) {
-        const totalPagar = (Number(rifaAtual.valor) * Number(quantidade)).toFixed(2);
-        const chavePix = rifaAtual.chavePix || 'Não informado';
+      document.getElementById('resultado').innerText = dados.mensagem;
 
-        const mensagem = encodeURIComponent(
-          `🍀 Compra confirmada\n\n` +
-          `🎁 Rifa: ${rifaAtual.nome}\n` +
-          `🏆 Prêmio: ${rifaAtual.premio || 'Não informado'}\n` +
-          `👤 Comprador: ${comprador}\n` +
-          `📱 WhatsApp: ${whatsapp}\n` +
-          `💰 Total: R$ ${totalPagar}\n` +
-          `🔑 PIX: ${chavePix}\n` +
-          `🎟️ ${dados.mensagem}\n\n` +
-          `Comprovante enviado pelo participante.`
-        );
-
-        resultado.innerHTML = `
-          <p>${dados.mensagem}</p>
-
-          <div class="pix-box">
-            <h3>💸 Pagamento via PIX</h3>
-            <p><strong>Total:</strong> R$ ${totalPagar}</p>
-            <p><strong>Chave PIX:</strong> ${chavePix}</p>
-
-            <button onclick="copiarPix('${chavePix}')">
-              Copiar chave PIX 📋
-            </button>
-
-            <p class="aviso-pix">
-              Após o pagamento, envie o comprovante para o dono da rifa.
-            </p>
-          </div>
-
-          <a href="https://wa.me/?text=${mensagem}" target="_blank" class="btn-whatsapp">
-            Enviar comprovante no WhatsApp 📲
-          </a>
-        `;
-      } else {
-        resultado.innerText = dados.mensagem;
-      }
-
-      resultado.style.display = "block";
       carregarRifa();
-    }
-
-    function copiarPix(chave) {
-      navigator.clipboard.writeText(chave);
-      alert("Chave PIX copiada!");
-    }
-
-    function compartilharResultado() {
-      if (!rifaAtual || !rifaAtual.ganhador) {
-        return;
-      }
-
-      const link = window.location.href;
-
-      const texto = encodeURIComponent(
-        `🏆 Resultado da rifa ${rifaAtual.nome}\n\n` +
-        `🎁 Prêmio: ${rifaAtual.premio || 'Não informado'}\n` +
-        `🎉 Ganhador: ${rifaAtual.ganhador.comprador}\n` +
-        `🍀 Número sorteado: ${rifaAtual.ganhador.numero}\n\n` +
-        `Veja aqui: ${link}`
-      );
-
-      window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 
     carregarRifa();

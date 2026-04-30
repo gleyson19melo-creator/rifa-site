@@ -8,229 +8,144 @@
 </head>
 <body>
 
-  <main class="dashboard-page">
+<main class="dashboard-page">
 
-    <header class="dashboard-header">
+<header class="dashboard-header">
+  <div>
+    <span class="dash-badge">🍀 RifaPro</span>
+    <h1>Painel do Usuário</h1>
+    <p id="usuarioLogado"></p>
+  </div>
+
+  <button class="btn-sair" onclick="sair()">Sair</button>
+</header>
+
+<section class="dashboard-grid">
+  <div class="dash-card form-card">
+    <h2>Criar nova rifa</h2>
+
+    <form id="formRifa">
+      <input type="text" placeholder="Nome da rifa" id="nome" required>
+      <input type="text" placeholder="Prêmio" id="premio" required>
+      <input type="text" placeholder="Valor" id="valor" required>
+      <input type="number" placeholder="Quantidade" id="quantidade" required>
+      <input type="text" placeholder="Chave PIX" id="chavePix" required>
+
+      <button type="submit" class="btn-criar">Criar</button>
+    </form>
+
+    <p id="msg"></p>
+  </div>
+
+  <div class="dash-card">
+    <h2>Resumo</h2>
+    <p>Rifas: <strong id="totalRifas">0</strong></p>
+  </div>
+</section>
+
+<section class="dash-card">
+  <h2>Minhas rifas</h2>
+  <div id="lista"></div>
+</section>
+
+</main>
+
+<script>
+const lista = document.getElementById('lista');
+const usuario = localStorage.getItem('usuario');
+
+document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
+
+async function carregarRifas() {
+  const res = await fetch(`/rifas/${usuario}`);
+  const rifas = await res.json();
+
+  lista.innerHTML = '';
+
+  rifas.forEach(rifa => {
+    const card = document.createElement('div');
+    card.className = 'rifa-item';
+
+    const pendentes = rifa.numeros.filter(n => n.status === 'pendente');
+
+    card.innerHTML = `
+      <h3>${rifa.nome}</h3>
+
+      <p>Vendidos: ${rifa.numeros.filter(n => n.status === 'vendido').length}</p>
+      <p>Pendentes: ${pendentes.length}</p>
+
+      <button onclick="sortear('${rifa.id}')">Sortear</button>
+
       <div>
-        <span class="dash-badge">🍀 RifaPro</span>
-        <h1>Painel do Usuário</h1>
-        <p id="usuarioLogado"></p>
-      </div>
+        ${pendentes.map(n => `
+          <div style="margin-top:10px; padding:10px; background:#fff3cd;">
+            Número ${n.numero} - ${n.comprador}
 
-      <button class="btn-sair" onclick="sair()">Sair</button>
-    </header>
+            <button onclick="confirmar('${rifa.id}', ${n.numero})">
+              Confirmar pagamento
+            </button>
 
-    <section class="dashboard-grid">
-      <div class="dash-card form-card">
-        <h2>Criar nova rifa</h2>
-        <p>Preencha os dados abaixo para gerar sua rifa online.</p>
-
-        <form id="formRifa">
-          <label>Nome da rifa</label>
-          <input type="text" placeholder="Ex: Rifa do iPhone" id="nome" required>
-
-          <label>Prêmio da rifa</label>
-          <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
-
-          <label>Valor do número</label>
-          <input type="text" placeholder="Ex: 0,50" id="valor" required>
-
-          <label>Quantidade de números</label>
-          <input type="number" placeholder="Ex: 100" id="quantidade" required>
-
-          <label>Chave PIX</label>
-          <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
-
-          <button type="submit" class="btn-criar">Criar rifa</button>
-        </form>
-
-        <p id="msg" class="dash-msg"></p>
-      </div>
-
-      <div class="dash-card info-card">
-        <h2>Resumo</h2>
-
-        <div class="stat">
-          <span>Minhas rifas</span>
-          <strong id="totalRifas">0</strong>
-        </div>
-
-        <div class="stat">
-          <span>Status</span>
-          <strong>Ativo</strong>
-        </div>
-
-        <p class="info-text">
-          Depois de criar uma rifa, copie o link público e compartilhe com seus participantes.
-        </p>
-      </div>
-    </section>
-
-    <section class="dash-card">
-      <div class="section-title">
-        <div>
-          <h2>Minhas rifas</h2>
-          <p>Gerencie, compartilhe e sorteie suas rifas criadas.</p>
-        </div>
-      </div>
-
-      <div id="lista" class="rifas-lista"></div>
-    </section>
-
-  </main>
-
-  <script>
-    const form = document.getElementById('formRifa');
-    const lista = document.getElementById('lista');
-    const usuario = localStorage.getItem('usuario');
-
-    if (!usuario) {
-      window.location.replace("/login.html");
-    }
-
-    document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
-
-    const campoValor = document.getElementById('valor');
-
-    campoValor.addEventListener('input', () => {
-      let valor = campoValor.value.replace(/\D/g, '');
-      valor = (Number(valor) / 100).toFixed(2);
-      valor = valor.replace('.', ',');
-      campoValor.value = valor;
-    });
-
-    async function carregarRifas() {
-      const res = await fetch(`/rifas/${usuario}`);
-      const rifas = await res.json();
-
-      lista.innerHTML = '';
-      document.getElementById('totalRifas').innerText = rifas.length;
-
-      rifas.forEach(rifa => {
-        const card = document.createElement('div');
-        card.className = 'rifa-item';
-
-        const link = `/rifa.html?id=${rifa.id}`;
-        const linkCompleto = window.location.origin + link;
-
-        const numeros = rifa.numeros || [];
-        const vendidos = numeros.filter(n => n.status === 'vendido').length;
-        const disponiveis = numeros.filter(n => n.status === 'disponivel').length;
-        const total = Number(rifa.quantidade) || numeros.length || 0;
-        const porcentagem = total > 0 ? (vendidos / total) * 100 : 0;
-
-        const mensagemWhatsApp = encodeURIComponent(
-          `🍀 Olha minha rifa: ${rifa.nome}\n` +
-          `🎁 Prêmio: ${rifa.premio}\n` +
-          `💰 Valor: R$ ${rifa.valor}\n\n` +
-          `Participe aqui: ${linkCompleto}`
-        );
-
-        card.innerHTML = `
-          <div class="rifa-info-painel">
-            <h3>${rifa.nome}</h3>
-            <p>🎁 ${rifa.premio}</p>
-            <p>💰 R$ ${rifa.valor}</p>
-            <p>📲 PIX: ${rifa.chavePix || 'Não informado'}</p>
-
-            <div class="vendas-resumo">
-              <div>
-                <span>Vendidos</span>
-                <strong>${vendidos}</strong>
-              </div>
-
-              <div>
-                <span>Disponíveis</span>
-                <strong>${disponiveis}</strong>
-              </div>
-
-              <div>
-                <span>Total</span>
-                <strong>${total}</strong>
-              </div>
-            </div>
-
-            <div class="progresso-vendas">
-              <div style="width: ${porcentagem}%"></div>
-            </div>
+            <button onclick="cancelar('${rifa.id}', ${n.numero})">
+              Cancelar
+            </button>
           </div>
+        `).join('')}
+      </div>
+    `;
 
-          <div class="rifa-actions">
-            <a href="${link}" target="_blank" class="btn">Ver rifa</a>
+    lista.appendChild(card);
+  });
+}
 
-            <a href="https://wa.me/?text=${mensagemWhatsApp}" target="_blank" class="btn-whatsapp">
-              WhatsApp
-            </a>
+// 🔥 CONFIRMAR PAGAMENTO
+async function confirmar(rifaId, numero) {
+  const res = await fetch('/confirmar-pagamento', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rifaId,
+      numero,
+      usuario
+    })
+  });
 
-            <button class="btn-sortear" onclick="sortearRifa('${rifa.id}')">Sortear</button>
+  const dados = await res.json();
+  alert(dados.mensagem);
+  carregarRifas();
+}
 
-            <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir</button>
-          </div>
-        `;
+// ❌ CANCELAR
+async function cancelar(rifaId, numero) {
+  const res = await fetch('/cancelar-reserva', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rifaId,
+      numero,
+      usuario
+    })
+  });
 
-        lista.appendChild(card);
-      });
-    }
+  const dados = await res.json();
+  alert(dados.mensagem);
+  carregarRifas();
+}
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+// 🎲 SORTEAR
+async function sortear(id) {
+  const res = await fetch('/sortear-ganhador', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rifaId: id, usuario })
+  });
 
-      const nome = document.getElementById('nome').value;
-      const premio = document.getElementById('premio').value;
-      const valor = document.getElementById('valor').value.replace(',', '.');
-      const quantidade = document.getElementById('quantidade').value;
-      const chavePix = document.getElementById('chavePix').value;
+  const dados = await res.json();
+  alert(dados.mensagem);
+  carregarRifas();
+}
 
-      const res = await fetch('/criar-rifa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome,
-          premio,
-          valor,
-          quantidade,
-          usuario,
-          chavePix
-        })
-      });
-
-      const dados = await res.json();
-      document.getElementById('msg').innerText = dados.mensagem;
-
-      form.reset();
-      carregarRifas();
-    });
-
-    async function excluirRifa(id) {
-      const confirmar = confirm("Tem certeza que quer excluir essa rifa?");
-
-      if (!confirmar) return;
-
-      const res = await fetch(`/excluir-rifa/${id}`, {
-        method: 'DELETE'
-      });
-
-      const dados = await res.json();
-      alert(dados.mensagem || "Rifa excluída com sucesso!");
-
-      carregarRifas();
-    }
-
-    async function sortearRifa(id) {
-      const res = await fetch(`/sortear-rifa/${id}`);
-      const dados = await res.json();
-
-      alert(dados.mensagem || `Número sorteado: ${dados.numero}`);
-      carregarRifas();
-    }
-
-    function sair() {
-      localStorage.removeItem('usuario');
-      window.location.replace("/login.html");
-    }
-
-    carregarRifas();
-  </script>
+carregarRifas();
+</script>
 
 </body>
 </html>
