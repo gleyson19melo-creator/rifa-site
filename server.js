@@ -7,10 +7,12 @@ app.use(express.static('public'));
 const usuarios = [];
 const rifas = [];
 
+// Rota inicial
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
+// Cadastro
 app.post('/cadastro', (req, res) => {
   const { nome, email, senha } = req.body;
 
@@ -20,9 +22,11 @@ app.post('/cadastro', (req, res) => {
   }
 
   usuarios.push({ nome, email, senha });
+
   res.json({ mensagem: 'Conta criada com sucesso 🚀', sucesso: true });
 });
 
+// Login
 app.post('/login', (req, res) => {
   const { email, senha } = req.body;
 
@@ -35,6 +39,7 @@ app.post('/login', (req, res) => {
   res.json({ mensagem: 'Login realizado com sucesso 🚀', sucesso: true });
 });
 
+// Criar rifa
 app.post('/criar-rifa', (req, res) => {
   const { nome, valor, quantidade, usuario } = req.body;
 
@@ -58,15 +63,19 @@ app.post('/criar-rifa', (req, res) => {
 
   rifas.push(novaRifa);
 
+  console.log('Rifas:', rifas);
+
   res.json({ mensagem: 'Rifa criada com sucesso 🚀', sucesso: true });
 });
 
+// Listar rifas do usuário
 app.get('/rifas/:usuario', (req, res) => {
   const usuario = req.params.usuario;
   const minhasRifas = rifas.filter(rifa => rifa.usuario === usuario);
   res.json(minhasRifas);
 });
 
+// Buscar rifa por ID
 app.get('/rifa/:id', (req, res) => {
   const id = Number(req.params.id);
   const rifa = rifas.find(r => r.id === id);
@@ -101,6 +110,9 @@ app.post('/comprar-numero', (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log('Servidor rodando em http://localhost:3000');
+// 🔥 IMPORTANTE PARA O RENDER
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
