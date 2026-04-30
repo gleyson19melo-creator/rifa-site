@@ -126,7 +126,8 @@
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
             <button onclick="copiarLink('${link}')">Copiar link</button>
-            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}')">Sortear ganhador 🏆</button>
+            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}')">Sortear 🏆</button>
+            <button class="btn-excluir" onclick="excluirRifa('${rifa.id}')">Excluir 🗑️</button>
           </div>
         `;
 
@@ -162,7 +163,7 @@
     }
 
     async function sortearGanhador(rifaId) {
-      const confirmar = confirm("Tem certeza que deseja sortear o ganhador desta rifa?");
+      const confirmar = confirm("Sortear ganhador?");
 
       if (!confirmar) return;
 
@@ -174,10 +175,22 @@
 
       const dados = await res.json();
 
-      if (!dados.sucesso) {
-        alert(dados.mensagem);
-      }
+      alert(dados.mensagem);
+      carregarRifas();
+    }
 
+    async function excluirRifa(rifaId) {
+      const confirmar = confirm("Tem certeza que deseja excluir essa rifa?");
+
+      if (!confirmar) return;
+
+      const res = await fetch(`/excluir-rifa/${rifaId}`, {
+        method: 'DELETE'
+      });
+
+      const dados = await res.json();
+
+      alert(dados.mensagem);
       carregarRifas();
     }
 

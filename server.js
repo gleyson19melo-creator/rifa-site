@@ -238,6 +238,33 @@ app.post('/sortear-ganhador', async (req, res) => {
   });
 });
 
+// Excluir rifa com segurança
+app.delete('/excluir-rifa/:id', async (req, res) => {
+  const id = req.params.id;
+
+  const ref = db.collection('rifas').doc(id);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  const temVendidos = rifa.numeros.some(n => n.status === 'vendido');
+
+  if (temVendidos) {
+    return res.json({
+      mensagem: 'Essa rifa já tem números vendidos e não pode ser excluída ❌',
+      sucesso: false
+    });
+  }
+
+  await ref.delete();
+
+  res.json({ mensagem: 'Rifa excluída com sucesso 🗑️', sucesso: true });
+});
+
 // Render
 const PORT = process.env.PORT || 3000;
 
