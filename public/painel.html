@@ -33,7 +33,8 @@
           <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
 
           <label>Valor do número</label>
-          <input type="number" placeholder="Ex: 5" id="valor" required>
+          <!-- 🔥 ALTERADO -->
+          <input type="text" placeholder="Ex: 0,50" id="valor" required>
 
           <label>Quantidade de números</label>
           <input type="number" placeholder="Ex: 100" id="quantidade" required>
@@ -86,6 +87,19 @@
     }
 
     document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
+
+    // 💰 MÁSCARA DE VALOR
+    const campoValor = document.getElementById('valor');
+
+    campoValor.addEventListener('input', () => {
+      let valor = campoValor.value.replace(/\D/g, '');
+
+      valor = (Number(valor) / 100).toFixed(2);
+
+      valor = valor.replace('.', ',');
+
+      campoValor.value = valor;
+    });
 
     async function carregarRifas() {
       const res = await fetch(`/rifas/${usuario}`);
@@ -168,7 +182,10 @@
 
       const nome = document.getElementById('nome').value;
       const premio = document.getElementById('premio').value;
-      const valor = document.getElementById('valor').value;
+
+      // 🔥 CONVERSÃO CORRETA
+      const valor = document.getElementById('valor').value.replace(',', '.');
+
       const quantidade = document.getElementById('quantidade').value;
 
       const res = await fetch('/criar-rifa', {
@@ -192,7 +209,6 @@
 
     async function sortearGanhador(rifaId) {
       const confirmar = confirm("Sortear ganhador?");
-
       if (!confirmar) return;
 
       const res = await fetch('/sortear-ganhador', {
@@ -202,14 +218,12 @@
       });
 
       const dados = await res.json();
-
       alert(dados.mensagem);
       carregarRifas();
     }
 
     async function excluirRifa(rifaId) {
       const confirmar = confirm("Tem certeza que deseja excluir essa rifa?");
-
       if (!confirmar) return;
 
       const res = await fetch(`/excluir-rifa/${rifaId}`, {
@@ -217,7 +231,6 @@
       });
 
       const dados = await res.json();
-
       alert(dados.mensagem);
       carregarRifas();
     }
@@ -229,7 +242,6 @@
 
     window.addEventListener('pageshow', () => {
       const usuarioAtual = localStorage.getItem('usuario');
-
       if (!usuarioAtual) {
         window.location.replace("/login.html");
       }
