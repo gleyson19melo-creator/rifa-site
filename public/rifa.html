@@ -1,172 +1,115 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprar Rifa | RifaPro</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
+<script>
+const params = new URLSearchParams(window.location.search);
+const id = params.get('id');
+let rifaAtual = null;
 
-  <main class="rifa-page">
+async function carregarRifa() {
+  const res = await fetch(`/rifa/${id}`);
+  const rifa = await res.json();
 
-    <section class="rifa-hero">
-      <div class="rifa-badge">🍀 RifaPro</div>
-      <h1 id="nomeRifa">Carregando...</h1>
-      <p id="descricaoRifa">Compre seus números automaticamente e concorra com sorte.</p>
+  if (!rifa) {
+    document.body.innerHTML = "<h2 class='erro'>Rifa não encontrada ❌</h2>";
+    return;
+  }
 
-      <div class="rifa-info">
-        <div>
-          <span>Prêmio</span>
-          <strong id="premioRifa">---</strong>
-        </div>
+  rifaAtual = rifa;
 
-        <div>
-          <span>Valor</span>
-          <strong id="valorRifa">R$ 0</strong>
-        </div>
+  // 🔥 NOVA LÓGICA AQUI
+  const areaCompra = document.getElementById('areaCompra');
+  const resultadoFinal = document.getElementById('resultadoFinal');
 
-        <div>
-          <span>Disponíveis</span>
-          <strong id="disponiveis">0</strong>
-        </div>
+  if (rifa.ganhador) {
+    areaCompra.style.display = "none";
+    resultadoFinal.style.display = "block";
+
+    resultadoFinal.innerHTML = `
+      <div style="padding:20px; background:#dcfce7; border-radius:12px;">
+        <span class="badge-finalizada">FINALIZADA</span><br><br>
+        <h2>🏆 Resultado do sorteio</h2>
+
+        <p><strong>🎁 Rifa:</strong> ${rifa.nome}</p>
+        <p><strong>👤 Ganhador:</strong> ${rifa.ganhador.comprador}</p>
+        <p><strong>🎟️ Número:</strong> ${rifa.ganhador.numero}</p>
       </div>
-    </section>
+    `;
 
-    <section id="resultadoFinal" class="rifa-card" style="display:none;"></section>
+    // rola até o resultado
+    setTimeout(() => {
+      resultadoFinal.scrollIntoView({ behavior: 'smooth' });
+    }, 300);
+  } else {
+    areaCompra.style.display = "block";
+    resultadoFinal.style.display = "none";
+  }
 
-    <section id="areaCompra" class="rifa-card compra-card">
-      <h2>Comprar números</h2>
+  document.getElementById('nomeRifa').innerText = rifa.nome;
+  document.getElementById('premioRifa').innerText = rifa.premio || 'Não informado';
+  document.getElementById('valorRifa').innerText = "R$ " + rifa.valor;
+  document.getElementById('pixRifa').innerText = rifa.chavePix || 'Não informado';
 
-      <div class="pix-box">
-        <h3>💸 Pagamento via PIX</h3>
-        <p><strong>Chave PIX:</strong> <span id="pixRifa">Carregando...</span></p>
+  const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel').length;
+  document.getElementById('disponiveis').innerText = disponiveis;
+  document.getElementById('totalNumerosInfo').innerText = "Total: " + rifa.quantidade + " números";
 
-        <button onclick="copiarPix()">
-          Copiar chave PIX 📋
-        </button>
+  const numerosDiv = document.getElementById('numeros');
+  numerosDiv.innerHTML = '';
 
-        <p class="aviso-pix">
-          Após reservar seus números, faça o pagamento e envie o comprovante.
-        </p>
-      </div>
+  rifa.numeros.forEach(n => {
+    const btn = document.createElement('button');
 
-      <label>Seu nome</label>
-      <input type="text" id="comprador" placeholder="Digite seu nome">
-
-      <label>WhatsApp</label>
-      <input type="text" id="whatsapp" placeholder="Ex: 75999999999">
-
-      <label>Quantidade de números</label>
-      <input type="number" id="quantidadeCompra" value="1" min="1">
-
-      <button class="btn-comprar" onclick="comprarNumero()">
-        Comprar agora 🍀
-      </button>
-
-      <div id="resultado" class="resultado"></div>
-    </section>
-
-    <section class="rifa-card">
-      <h2>Números da rifa</h2>
-      <p id="totalNumerosInfo" class="legenda"></p>
-
-      <p class="legenda">
-        ✅ Disponível &nbsp;&nbsp; ⏳ Pendente &nbsp;&nbsp; ❌ Pago
-      </p>
-
-      <div id="numeros" class="numeros-grid"></div>
-    </section>
-
-  </main>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    let rifaAtual = null;
-
-    async function carregarRifa() {
-      const res = await fetch(`/rifa/${id}`);
-      const rifa = await res.json();
-
-      if (!rifa) {
-        document.body.innerHTML = "<h2 class='erro'>Rifa não encontrada ❌</h2>";
-        return;
-      }
-
-      rifaAtual = rifa;
-
-      document.getElementById('nomeRifa').innerText = rifa.nome;
-      document.getElementById('premioRifa').innerText = rifa.premio || 'Não informado';
-      document.getElementById('valorRifa').innerText = "R$ " + rifa.valor;
-      document.getElementById('pixRifa').innerText = rifa.chavePix || 'Não informado';
-
-      const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel').length;
-      document.getElementById('disponiveis').innerText = disponiveis;
-      document.getElementById('totalNumerosInfo').innerText = "Total: " + rifa.quantidade + " números";
-
-      const numerosDiv = document.getElementById('numeros');
-      numerosDiv.innerHTML = '';
-
-      rifa.numeros.forEach(n => {
-        const btn = document.createElement('button');
-
-        if (n.status === 'vendido') {
-          btn.innerText = n.numero + " ❌";
-          btn.className = "numero vendido";
-          btn.disabled = true;
-        }
-        else if (n.status === 'pendente') {
-          btn.innerText = n.numero + " ⏳";
-          btn.className = "numero pendente";
-          btn.disabled = true;
-        }
-        else {
-          btn.innerText = n.numero + " ✅";
-          btn.className = "numero disponivel";
-        }
-
-        numerosDiv.appendChild(btn);
-      });
+    if (n.status === 'vendido') {
+      btn.innerText = n.numero + " ❌";
+      btn.className = "numero vendido";
+      btn.disabled = true;
+    }
+    else if (n.status === 'pendente') {
+      btn.innerText = n.numero + " ⏳";
+      btn.className = "numero pendente";
+      btn.disabled = true;
+    }
+    else {
+      btn.innerText = n.numero + " ✅";
+      btn.className = "numero disponivel";
     }
 
-    async function comprarNumero() {
-      const comprador = document.getElementById('comprador').value.trim();
-      const whatsapp = document.getElementById('whatsapp').value.trim();
-      const quantidade = document.getElementById('quantidadeCompra').value;
+    numerosDiv.appendChild(btn);
+  });
+}
 
-      if (!comprador) {
-        alert("Digite seu nome");
-        return;
-      }
+async function comprarNumero() {
+  const comprador = document.getElementById('comprador').value.trim();
+  const whatsapp = document.getElementById('whatsapp').value.trim();
+  const quantidade = document.getElementById('quantidadeCompra').value;
 
-      if (!whatsapp) {
-        alert("Digite seu WhatsApp");
-        return;
-      }
+  if (!comprador) {
+    alert("Digite seu nome");
+    return;
+  }
 
-      const res = await fetch('/comprar-numero', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
-      });
+  if (!whatsapp) {
+    alert("Digite seu WhatsApp");
+    return;
+  }
 
-      const dados = await res.json();
+  const res = await fetch('/comprar-numero', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
+  });
 
-      document.getElementById('resultado').innerText = dados.mensagem;
-      document.getElementById('resultado').style.display = "block";
+  const dados = await res.json();
 
-      carregarRifa();
-    }
+  document.getElementById('resultado').innerText = dados.mensagem;
+  document.getElementById('resultado').style.display = "block";
 
-    function copiarPix() {
-      const pix = document.getElementById('pixRifa').innerText;
-      navigator.clipboard.writeText(pix);
-      alert("Chave PIX copiada!");
-    }
+  carregarRifa();
+}
 
-    carregarRifa();
-  </script>
+function copiarPix() {
+  const pix = document.getElementById('pixRifa').innerText;
+  navigator.clipboard.writeText(pix);
+  alert("Chave PIX copiada!");
+}
 
-</body>
-</html>
+carregarRifa();
+</script>
