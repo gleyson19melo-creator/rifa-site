@@ -1,11 +1,19 @@
 const express = require('express');
+const admin = require('firebase-admin');
+
 const app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
 
-const usuarios = [];
-const rifas = [];
+// Firebase
+const serviceAccount = require('./firebase.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
 
 // Rota inicial
 app.get('/', (req, res) => {
@@ -13,26 +21,37 @@ app.get('/', (req, res) => {
 });
 
 // Cadastro
-app.post('/cadastro', (req, res) => {
+app.post('/cadastro', async (req, res) => {
   const { nome, email, senha } = req.body;
 
-  const existe = usuarios.find(u => u.email === email);
-  if (existe) {
+  const snapshot = await db.collection('usuarios')
+    .where('email', '==', email)
+    .get();
+
+  if (!snapshot.empty) {
     return res.json({ mensagem: 'Email já cadastrado ❌', sucesso: false });
   }
 
-  usuarios.push({ nome, email, senha });
+  await db.collection('usuarios').add({
+    nome,
+    email,
+    senha,
+    criadoEm: Date.now()
+  });
 
   res.json({ mensagem: 'Conta criada com sucesso 🚀', sucesso: true });
 });
 
 // Login
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
-  const usuario = usuarios.find(u => u.email === email && u.senha === senha);
+  const snapshot = await db.collection('usuarios')
+    .where('email', '==', email)
+    .where('senha', '==', senha)
+    .get();
 
-  if (!usuario) {
+  if (snapshot.empty) {
     return res.json({ mensagem: 'Email ou senha incorretos ❌', sucesso: false });
   }
 
@@ -40,7 +59,7 @@ app.post('/login', (req, res) => {
 });
 
 // Criar rifa
-app.post('/criar-rifa', (req, res) => {
+app.post('/criar-rifa', async (req, res) => {
   const { nome, valor, quantidade, usuario } = req.body;
 
   const numeros = [];
@@ -48,54 +67,87 @@ app.post('/criar-rifa', (req, res) => {
   for (let i = 1; i <= Number(quantidade); i++) {
     numeros.push({
       numero: i,
-      status: 'disponivel'
+      status: 'disponivel',
+      comprador: null
     });
   }
 
   const novaRifa = {
-    id: Date.now(),
     nome,
     valor,
     quantidade,
     usuario,
-    numeros
+    numeros,
+    criadoEm: Date.now()
   };
 
-  rifas.push(novaRifa);
-
-  console.log('Rifas:', rifas);
+  await db.collection('rifas').add(novaRifa);
 
   res.json({ mensagem: 'Rifa criada com sucesso 🚀', sucesso: true });
 });
 
 // Listar rifas do usuário
-app.get('/rifas/:usuario', (req, res) => {
+app.get('/rifas/:usuario', async (req, res) => {
   const usuario = req.params.usuario;
-  const minhasRifas = rifas.filter(rifa => rifa.usuario === usuario);
-  res.json(minhasRifas);
+
+  const snapshot = await db.collection('rifas')
+    .where('usuario', '==', usuario)
+    .get();
+
+  const rifas = [];
+
+  snapshot.forEach(doc => {
+    rifas.push({
+      id: doc.id,
+      ...doc.data()
+    });
+  });
+
+  res.json(rifas);
 });
 
-// Listar todas as rifas públicas na tela inicial
-app.get('/rifas-publicas', (req, res) => {
+// Listar todas as rifas públicas
+app.get('/rifas-publicas', async (req, res) => {
+  const snapshot = await db.collection('rifas').get();
+
+  const rifas = [];
+
+  snapshot.forEach(doc => {
+    rifas.push({
+      id: doc.id,
+      ...doc.data()
+    });
+  });
+
   res.json(rifas);
 });
 
 // Buscar rifa por ID
-app.get('/rifa/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const rifa = rifas.find(r => r.id === id);
-  res.json(rifa || null);
+app.get('/rifa/:id', async (req, res) => {
+  const doc = await db.collection('rifas').doc(req.params.id).get();
+
+  if (!doc.exists) {
+    return res.json(null);
+  }
+
+  res.json({
+    id: doc.id,
+    ...doc.data()
+  });
 });
 
 // Comprar número aleatório
-app.post('/comprar-numero', (req, res) => {
+app.post('/comprar-numero', async (req, res) => {
   const { rifaId, comprador } = req.body;
 
-  const rifa = rifas.find(r => r.id == rifaId);
+  const ref = db.collection('rifas').doc(rifaId);
+  const doc = await ref.get();
 
-  if (!rifa) {
+  if (!doc.exists) {
     return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
   }
+
+  const rifa = doc.data();
 
   const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel');
 
@@ -105,8 +157,21 @@ app.post('/comprar-numero', (req, res) => {
 
   const sorteado = disponiveis[Math.floor(Math.random() * disponiveis.length)];
 
-  sorteado.status = 'vendido';
-  sorteado.comprador = comprador || 'Comprador';
+  const numerosAtualizados = rifa.numeros.map(n => {
+    if (n.numero === sorteado.numero) {
+      return {
+        ...n,
+        status: 'vendido',
+        comprador: comprador || 'Comprador'
+      };
+    }
+
+    return n;
+  });
+
+  await ref.update({
+    numeros: numerosAtualizados
+  });
 
   res.json({
     mensagem: `Compra realizada! Seu número é ${sorteado.numero} 🍀`,
@@ -115,7 +180,7 @@ app.post('/comprar-numero', (req, res) => {
   });
 });
 
-// 🔥 IMPORTANTE PARA O RENDER
+// Render
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
