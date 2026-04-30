@@ -64,7 +64,7 @@
       <div class="section-title">
         <div>
           <h2>Minhas rifas</h2>
-          <p>Gerencie e compartilhe suas rifas criadas.</p>
+          <p>Gerencie, compartilhe e sorteie suas rifas criadas.</p>
         </div>
       </div>
 
@@ -102,15 +102,27 @@
 
         const link = `/rifa.html?id=${rifa.id}`;
 
+        let ganhadorTexto = '';
+
+        if (rifa.ganhador) {
+          ganhadorTexto = `
+            <p class="ganhador-texto">
+              🏆 Ganhador: número ${rifa.ganhador.numero} - ${rifa.ganhador.comprador}
+            </p>
+          `;
+        }
+
         card.innerHTML = `
           <div>
             <h3>${rifa.nome}</h3>
             <p>R$ ${rifa.valor} por número • ${rifa.quantidade} números</p>
+            ${ganhadorTexto}
           </div>
 
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
             <button onclick="copiarLink('${link}')">Copiar link</button>
+            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}')">Sortear ganhador 🏆</button>
           </div>
         `;
 
@@ -142,6 +154,26 @@
       const urlCompleta = window.location.origin + link;
       navigator.clipboard.writeText(urlCompleta);
       alert("Link copiado!");
+    }
+
+    async function sortearGanhador(rifaId) {
+      const confirmar = confirm("Tem certeza que deseja sortear o ganhador desta rifa?");
+
+      if (!confirmar) {
+        return;
+      }
+
+      const res = await fetch('/sortear-ganhador', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rifaId, usuario })
+      });
+
+      const dados = await res.json();
+
+      alert(dados.mensagem);
+
+      carregarRifas();
     }
 
     function sair() {

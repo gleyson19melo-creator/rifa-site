@@ -84,6 +84,7 @@ app.post('/criar-rifa', async (req, res) => {
     quantidade,
     usuario,
     numeros,
+    ganhador: null,
     criadoEm: Date.now()
   };
 
@@ -183,6 +184,56 @@ app.post('/comprar-numero', async (req, res) => {
     mensagem: `Compra realizada! Seu número é ${sorteado.numero} 🍀`,
     sucesso: true,
     numero: sorteado.numero
+  });
+});
+
+// Sortear ganhador da rifa
+app.post('/sortear-ganhador', async (req, res) => {
+  const { rifaId, usuario } = req.body;
+
+  const ref = db.collection('rifas').doc(rifaId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (rifa.usuario !== usuario) {
+    return res.json({ mensagem: 'Você não tem permissão para sortear essa rifa ❌', sucesso: false });
+  }
+
+  if (rifa.ganhador) {
+    return res.json({
+      mensagem: `Essa rifa já foi sorteada. Ganhador: número ${rifa.ganhador.numero} - ${rifa.ganhador.comprador} 🏆`,
+      sucesso: true,
+      ganhador: rifa.ganhador
+    });
+  }
+
+  const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
+
+  if (vendidos.length === 0) {
+    return res.json({ mensagem: 'Ainda não tem números vendidos para sortear ❌', sucesso: false });
+  }
+
+  const ganhador = vendidos[Math.floor(Math.random() * vendidos.length)];
+
+  const resultado = {
+    numero: ganhador.numero,
+    comprador: ganhador.comprador || 'Comprador',
+    sorteadoEm: Date.now()
+  };
+
+  await ref.update({
+    ganhador: resultado
+  });
+
+  res.json({
+    mensagem: `Ganhador sorteado! Número ${resultado.numero} - ${resultado.comprador} 🏆`,
+    sucesso: true,
+    ganhador: resultado
   });
 });
 
