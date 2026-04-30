@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -113,7 +112,6 @@
         const numeros = rifa.numeros || [];
         const vendidos = numeros.filter(n => n.status === 'vendido');
         const pendentes = numeros.filter(n => n.status === 'pendente');
-        const disponiveis = numeros.filter(n => n.status === 'disponivel');
         const total = Number(rifa.quantidade) || numeros.length || 0;
         const porcentagem = total > 0 ? (vendidos.length / total) * 100 : 0;
 
@@ -149,6 +147,30 @@
           `;
         }
 
+        const blocoPendentes = pendentes.length > 0 ? `
+          <button class="btn" onclick="togglePendentes('${rifa.id}')">
+            Ver reservas pendentes (${pendentes.length})
+          </button>
+
+          <div id="pendentes-${rifa.id}" style="display:none; margin-top:12px;">
+            ${pendentes.map(n => `
+              <div style="margin-top:10px; padding:12px; background:#fff3cd; border-radius:12px;">
+                <strong>⏳ Número ${n.numero}</strong><br>
+                Cliente: ${n.comprador || 'Não informado'}<br>
+                WhatsApp: ${n.whatsapp || 'Não informado'}<br><br>
+
+                <button onclick="confirmar('${rifa.id}', ${n.numero})">
+                  Confirmar pagamento
+                </button>
+
+                <button onclick="cancelar('${rifa.id}', ${n.numero})">
+                  Cancelar
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        ` : '';
+
         card.innerHTML = `
           <div class="rifa-info-painel">
             <h3>${rifa.nome}</h3>
@@ -178,22 +200,7 @@
             </div>
 
             ${resultadoGanhador}
-
-            ${pendentes.map(n => `
-              <div style="margin-top:10px; padding:12px; background:#fff3cd; border-radius:12px;">
-                <strong>⏳ Número ${n.numero}</strong><br>
-                Cliente: ${n.comprador || 'Não informado'}<br>
-                WhatsApp: ${n.whatsapp || 'Não informado'}<br><br>
-
-                <button onclick="confirmar('${rifa.id}', ${n.numero})">
-                  Confirmar pagamento
-                </button>
-
-                <button onclick="cancelar('${rifa.id}', ${n.numero})">
-                  Cancelar
-                </button>
-              </div>
-            `).join('')}
+            ${blocoPendentes}
           </div>
 
           <div class="rifa-actions">
@@ -303,6 +310,13 @@
       alert(dados.mensagem || "Rifa excluída com sucesso!");
 
       carregarRifas();
+    }
+
+    function togglePendentes(id) {
+      const box = document.getElementById(`pendentes-${id}`);
+      if (!box) return;
+
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
     }
 
     function sair() {

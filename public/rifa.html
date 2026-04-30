@@ -38,6 +38,19 @@
     <section id="areaCompra" class="rifa-card compra-card">
       <h2>Comprar números</h2>
 
+      <div class="pix-box">
+        <h3>💸 Pagamento via PIX</h3>
+        <p><strong>Chave PIX:</strong> <span id="pixRifa">Carregando...</span></p>
+
+        <button onclick="copiarPix()">
+          Copiar chave PIX 📋
+        </button>
+
+        <p class="aviso-pix">
+          Após reservar seus números, faça o pagamento e envie o comprovante.
+        </p>
+      </div>
+
       <label>Seu nome</label>
       <input type="text" id="comprador" placeholder="Digite seu nome">
 
@@ -58,7 +71,6 @@
       <h2>Números da rifa</h2>
       <p id="totalNumerosInfo" class="legenda"></p>
 
-      <!-- 🔥 ATUALIZADO -->
       <p class="legenda">
         ✅ Disponível &nbsp;&nbsp; ⏳ Pendente &nbsp;&nbsp; ❌ Pago
       </p>
@@ -87,6 +99,7 @@
       document.getElementById('nomeRifa').innerText = rifa.nome;
       document.getElementById('premioRifa').innerText = rifa.premio || 'Não informado';
       document.getElementById('valorRifa').innerText = "R$ " + rifa.valor;
+      document.getElementById('pixRifa').innerText = rifa.chavePix || 'Não informado';
 
       const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel').length;
       document.getElementById('disponiveis').innerText = disponiveis;
@@ -98,7 +111,6 @@
       rifa.numeros.forEach(n => {
         const btn = document.createElement('button');
 
-        // 🔥 AQUI FOI A ÚNICA MUDANÇA
         if (n.status === 'vendido') {
           btn.innerText = n.numero + " ❌";
           btn.className = "numero vendido";
@@ -123,6 +135,16 @@
       const whatsapp = document.getElementById('whatsapp').value.trim();
       const quantidade = document.getElementById('quantidadeCompra').value;
 
+      if (!comprador) {
+        alert("Digite seu nome");
+        return;
+      }
+
+      if (!whatsapp) {
+        alert("Digite seu WhatsApp");
+        return;
+      }
+
       const res = await fetch('/comprar-numero', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,8 +154,15 @@
       const dados = await res.json();
 
       document.getElementById('resultado').innerText = dados.mensagem;
+      document.getElementById('resultado').style.display = "block";
 
       carregarRifa();
+    }
+
+    function copiarPix() {
+      const pix = document.getElementById('pixRifa').innerText;
+      navigator.clipboard.writeText(pix);
+      alert("Chave PIX copiada!");
     }
 
     carregarRifa();
