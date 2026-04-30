@@ -13,7 +13,7 @@
     <section class="rifa-hero">
       <div class="rifa-badge">🍀 RifaPro</div>
       <h1 id="nomeRifa">Carregando...</h1>
-      <p>Compre seus números automaticamente e concorra com sorte.</p>
+      <p id="descricaoRifa">Compre seus números automaticamente e concorra com sorte.</p>
 
       <div class="rifa-info">
         <div>
@@ -33,7 +33,9 @@
       </div>
     </section>
 
-    <section class="rifa-card compra-card">
+    <section id="resultadoFinal" class="rifa-card" style="display:none;"></section>
+
+    <section id="areaCompra" class="rifa-card compra-card">
       <h2>Comprar números</h2>
       <p>Preencha seus dados e o sistema vai sortear números disponíveis para você.</p>
 
@@ -65,6 +67,7 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
+    let rifaAtual = null;
 
     async function carregarRifa() {
       const res = await fetch(`/rifa/${id}`);
@@ -75,12 +78,41 @@
         return;
       }
 
+      rifaAtual = rifa;
+
       document.getElementById('nomeRifa').innerText = rifa.nome;
       document.getElementById('valorRifa').innerText = "R$ " + rifa.valor;
       document.getElementById('quantidadeRifa').innerText = rifa.quantidade;
 
       const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel').length;
       document.getElementById('disponiveis').innerText = disponiveis;
+
+      const areaCompra = document.getElementById('areaCompra');
+      const resultadoFinal = document.getElementById('resultadoFinal');
+      const descricaoRifa = document.getElementById('descricaoRifa');
+
+      if (rifa.ganhador) {
+        areaCompra.style.display = "none";
+        resultadoFinal.style.display = "block";
+        descricaoRifa.innerText = "Esta rifa já foi finalizada. Confira o resultado abaixo.";
+
+        resultadoFinal.innerHTML = `
+          <div class="resultado-final-rifa">
+            <span class="badge-finalizada">FINALIZADA</span>
+            <h2>🏆 Resultado do sorteio</h2>
+            <p>Ganhador: <strong>${rifa.ganhador.comprador}</strong></p>
+            <p>Número sorteado: <strong>${rifa.ganhador.numero}</strong></p>
+
+            <button class="btn-whatsapp" onclick="compartilharResultado()">
+              Compartilhar resultado no WhatsApp
+            </button>
+          </div>
+        `;
+      } else {
+        areaCompra.style.display = "block";
+        resultadoFinal.style.display = "none";
+        descricaoRifa.innerText = "Compre seus números automaticamente e concorra com sorte.";
+      }
 
       const numerosDiv = document.getElementById('numeros');
       numerosDiv.innerHTML = '';
@@ -134,6 +166,15 @@
       resultado.style.display = "block";
 
       carregarRifa();
+    }
+
+    function compartilharResultado() {
+      if (!rifaAtual || !rifaAtual.ganhador) {
+        return;
+      }
+
+      const texto = `🏆 Resultado da rifa ${rifaAtual.nome}%0A🎉 Ganhador: ${rifaAtual.ganhador.comprador}%0A🍀 Número sorteado: ${rifaAtual.ganhador.numero}`;
+      window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 
     carregarRifa();

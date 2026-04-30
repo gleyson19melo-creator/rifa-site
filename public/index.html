@@ -34,9 +34,7 @@
         </p>
 
         <div class="hero-buttons">
-          <!-- 🔥 ALTERADO -->
           <a href="/cadastro.html" class="btn">Começar agora</a>
-
           <a href="/login.html" class="btn btn-outline">Já tenho conta</a>
         </div>
       </div>
@@ -56,7 +54,6 @@
           <span>42</span>
         </div>
 
-        <!-- 🔥 ALTERADO -->
         <a href="/login.html" class="btn">Criar minha rifa</a>
       </div>
     </section>
@@ -132,14 +129,27 @@
         const card = document.createElement('div');
         card.className = 'rifa-home-card';
 
-        let ganhadorHome = '';
+        let statusRifa = '';
+        let botoesRifa = '';
 
         if (rifa.ganhador) {
-          ganhadorHome = `
+          statusRifa = `
             <div class="ganhador-home">
+              <span class="badge-finalizada">FINALIZADA</span><br><br>
               🏆 Ganhador: número ${rifa.ganhador.numero}<br>
               <strong>${rifa.ganhador.comprador}</strong>
             </div>
+          `;
+
+          botoesRifa = `
+            <a href="/rifa.html?id=${rifa.id}" class="btn btn-resultado">Ver resultado 🏆</a>
+            <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}')">
+              Compartilhar resultado
+            </button>
+          `;
+        } else {
+          botoesRifa = `
+            <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
           `;
         }
 
@@ -147,12 +157,17 @@
           <h3>${rifa.nome}</h3>
           <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
           <p>Total: ${rifa.quantidade} números</p>
-          ${ganhadorHome}
-          <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
+          ${statusRifa}
+          ${botoesRifa}
         `;
 
         lista.appendChild(card);
       });
+    }
+
+    function compartilharResultado(nomeRifa, numero, comprador) {
+      const texto = `🏆 Resultado da rifa ${nomeRifa}%0A🎉 Ganhador: ${comprador}%0A🍀 Número sorteado: ${numero}`;
+      window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 
     carregarRifasPublicas();
