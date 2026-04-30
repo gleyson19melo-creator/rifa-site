@@ -79,7 +79,7 @@
     const usuario = localStorage.getItem('usuario');
 
     if (!usuario) {
-      window.location.href = "/login.html";
+      window.location.replace("/login.html");
     }
 
     document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
@@ -146,8 +146,16 @@
 
     function sair() {
       localStorage.removeItem('usuario');
-      window.location.href = "/login.html";
+      window.location.replace("/login.html");
     }
+
+    window.addEventListener('pageshow', () => {
+      const usuarioAtual = localStorage.getItem('usuario');
+
+      if (!usuarioAtual) {
+        window.location.replace("/login.html");
+      }
+    });
 
     carregarRifas();
   </script>
