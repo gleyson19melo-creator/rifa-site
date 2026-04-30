@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rifa</title>
+  <title>Comprar Rifa | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
   <main class="rifa-page">
 
     <section class="rifa-hero">
-      <div class="rifa-badge">🍀 Rifa Online</div>
+      <div class="rifa-badge">🍀 RifaPro</div>
       <h1 id="nomeRifa">Carregando...</h1>
-      <p>Compre seu número automaticamente e concorra com sorte!</p>
+      <p>Compre seus números automaticamente e concorra com sorte.</p>
 
       <div class="rifa-info">
         <div>
           <span>Valor</span>
-          <strong id="valorRifa">R$ 0,00</strong>
+          <strong id="valorRifa">R$ 0</strong>
         </div>
 
         <div>
@@ -34,13 +34,20 @@
     </section>
 
     <section class="rifa-card compra-card">
-      <h2>Comprar número aleatório 🍀</h2>
-      <p>Digite seu nome e o sistema vai sortear um número disponível para você.</p>
+      <h2>Comprar números</h2>
+      <p>Preencha seus dados e o sistema vai sortear números disponíveis para você.</p>
 
+      <label>Seu nome</label>
       <input type="text" id="comprador" placeholder="Digite seu nome">
 
+      <label>WhatsApp</label>
+      <input type="text" id="whatsapp" placeholder="Ex: 75999999999">
+
+      <label>Quantidade de números</label>
+      <input type="number" id="quantidadeCompra" value="1" min="1">
+
       <button class="btn-comprar" onclick="comprarNumero()">
-        Comprar número agora
+        Comprar agora 🍀
       </button>
 
       <div id="resultado" class="resultado"></div>
@@ -48,9 +55,7 @@
 
     <section class="rifa-card">
       <h2>Números da rifa</h2>
-      <p class="legenda">
-        ✅ Disponível &nbsp;&nbsp; ❌ Vendido
-      </p>
+      <p class="legenda">✅ Disponível &nbsp;&nbsp; ❌ Vendido</p>
 
       <div id="numeros" class="numeros-grid"></div>
     </section>
@@ -98,16 +103,28 @@
 
     async function comprarNumero() {
       const comprador = document.getElementById('comprador').value.trim();
+      const whatsapp = document.getElementById('whatsapp').value.trim();
+      const quantidade = document.getElementById('quantidadeCompra').value;
 
       if (!comprador) {
-        alert("Digite seu nome primeiro");
+        alert("Digite seu nome");
+        return;
+      }
+
+      if (!whatsapp) {
+        alert("Digite seu WhatsApp");
+        return;
+      }
+
+      if (quantidade < 1) {
+        alert("Escolha pelo menos 1 número");
         return;
       }
 
       const res = await fetch('/comprar-numero', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rifaId: id, comprador })
+        body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
       });
 
       const dados = await res.json();
