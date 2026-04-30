@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h2>Criar Conta</h2>
+
+  <form id="formCadastro">
+    <input type="text" placeholder="Nome" id="nome" required><br><br>
+    <input type="email" placeholder="Email" id="email" required><br><br>
+    <input type="password" placeholder="Senha" id="senha" required><br><br>
+
+    <button type="submit">Cadastrar</button>
+  </form>
+
+  <p id="msg"></p>
+
+  <script>
+    const form = document.getElementById('formCadastro');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome').value;
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      const resposta = await fetch('/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha })
+      });
+
+      const dados = await resposta.json();
+      document.getElementById('msg').innerText = dados.mensagem;
+    });
+  </script>
+</body>
+</html>

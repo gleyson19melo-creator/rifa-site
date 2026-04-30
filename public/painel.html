@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h2>Painel do Usuário</h2>
+  <p id="usuarioLogado"></p>
+
+  <button onclick="sair()">Sair</button>
+
+  <h3>Criar nova rifa</h3>
+
+  <form id="formRifa">
+    <input type="text" placeholder="Nome da rifa" id="nome" required><br><br>
+    <input type="number" placeholder="Valor do número" id="valor" required><br><br>
+    <input type="number" placeholder="Quantidade de números" id="quantidade" required><br><br>
+
+    <button type="submit">Criar Rifa</button>
+  </form>
+
+  <p id="msg"></p>
+
+  <h3>Minhas rifas</h3>
+  <ul id="lista"></ul>
+
+  <script>
+    const form = document.getElementById('formRifa');
+    const lista = document.getElementById('lista');
+    const usuario = localStorage.getItem('usuario');
+
+    if (!usuario) {
+      window.location.href = "/login.html";
+    }
+
+    document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
+
+    async function carregarRifas() {
+      const res = await fetch(`/rifas/${usuario}`);
+      const rifas = await res.json();
+
+      lista.innerHTML = '';
+
+      rifas.forEach(rifa => {
+        const li = document.createElement('li');
+
+        li.innerHTML = `
+          <strong>${rifa.nome}</strong> - R$ ${rifa.valor} - ${rifa.quantidade} números
+          <br>
+          <a href="/rifa.html?id=${rifa.id}" target="_blank">Ver página da rifa</a>
+        `;
+
+        lista.appendChild(li);
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome').value;
+      const valor = document.getElementById('valor').value;
+      const quantidade = document.getElementById('quantidade').value;
+
+      const res = await fetch('/criar-rifa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, valor, quantidade, usuario })
+      });
+
+      const dados = await res.json();
+      document.getElementById('msg').innerText = dados.mensagem;
+
+      form.reset();
+      carregarRifas();
+    });
+
+    function sair() {
+      localStorage.removeItem('usuario');
+      window.location.href = "/login.html";
+    }
+
+    carregarRifas();
+  </script>
+</body>
+</html>

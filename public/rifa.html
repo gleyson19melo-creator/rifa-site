@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rifa</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <main class="rifa-page">
+
+    <section class="rifa-hero">
+      <div class="rifa-badge">🍀 Rifa Online</div>
+      <h1 id="nomeRifa">Carregando...</h1>
+      <p>Compre seu número automaticamente e concorra com sorte!</p>
+
+      <div class="rifa-info">
+        <div>
+          <span>Valor</span>
+          <strong id="valorRifa">R$ 0,00</strong>
+        </div>
+
+        <div>
+          <span>Total</span>
+          <strong id="quantidadeRifa">0</strong>
+        </div>
+
+        <div>
+          <span>Disponíveis</span>
+          <strong id="disponiveis">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="rifa-card compra-card">
+      <h2>Comprar número aleatório 🍀</h2>
+      <p>Digite seu nome e o sistema vai sortear um número disponível para você.</p>
+
+      <input type="text" id="comprador" placeholder="Digite seu nome">
+
+      <button class="btn-comprar" onclick="comprarNumero()">
+        Comprar número agora
+      </button>
+
+      <div id="resultado" class="resultado"></div>
+    </section>
+
+    <section class="rifa-card">
+      <h2>Números da rifa</h2>
+      <p class="legenda">
+        ✅ Disponível &nbsp;&nbsp; ❌ Vendido
+      </p>
+
+      <div id="numeros" class="numeros-grid"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    async function carregarRifa() {
+      const res = await fetch(`/rifa/${id}`);
+      const rifa = await res.json();
+
+      if (!rifa) {
+        document.body.innerHTML = "<h2 class='erro'>Rifa não encontrada ❌</h2>";
+        return;
+      }
+
+      document.getElementById('nomeRifa').innerText = rifa.nome;
+      document.getElementById('valorRifa').innerText = "R$ " + rifa.valor;
+      document.getElementById('quantidadeRifa').innerText = rifa.quantidade;
+
+      const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel').length;
+      document.getElementById('disponiveis').innerText = disponiveis;
+
+      const numerosDiv = document.getElementById('numeros');
+      numerosDiv.innerHTML = '';
+
+      rifa.numeros.forEach(n => {
+        const btn = document.createElement('button');
+
+        if (n.status === 'vendido') {
+          btn.innerText = n.numero + " ❌";
+          btn.className = "numero vendido";
+          btn.disabled = true;
+        } else {
+          btn.innerText = n.numero + " ✅";
+          btn.className = "numero disponivel";
+        }
+
+        numerosDiv.appendChild(btn);
+      });
+    }
+
+    async function comprarNumero() {
+      const comprador = document.getElementById('comprador').value.trim();
+
+      if (!comprador) {
+        alert("Digite seu nome primeiro");
+        return;
+      }
+
+      const res = await fetch('/comprar-numero', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rifaId: id, comprador })
+      });
+
+      const dados = await res.json();
+
+      const resultado = document.getElementById('resultado');
+      resultado.innerText = dados.mensagem;
+      resultado.style.display = "block";
+
+      carregarRifa();
+    }
+
+    carregarRifa();
+  </script>
+
+</body>
+</html>
