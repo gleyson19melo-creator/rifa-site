@@ -112,14 +112,47 @@
 
         const link = `/rifa.html?id=${rifa.id}`;
         const linkCompleto = window.location.origin + link;
-        const mensagemWhatsApp = encodeURIComponent(`🍀 Olha minha rifa: ${rifa.nome}\n🎁 Prêmio: ${rifa.premio}\n💰 Valor: R$ ${rifa.valor}\n\nParticipe aqui: ${linkCompleto}`);
+
+        const numeros = rifa.numeros || [];
+        const vendidos = numeros.filter(n => n.status === 'vendido').length;
+        const disponiveis = numeros.filter(n => n.status === 'disponivel').length;
+        const total = Number(rifa.quantidade) || numeros.length || 0;
+        const porcentagem = total > 0 ? (vendidos / total) * 100 : 0;
+
+        const mensagemWhatsApp = encodeURIComponent(
+          `🍀 Olha minha rifa: ${rifa.nome}\n` +
+          `🎁 Prêmio: ${rifa.premio}\n` +
+          `💰 Valor: R$ ${rifa.valor}\n\n` +
+          `Participe aqui: ${linkCompleto}`
+        );
 
         card.innerHTML = `
-          <div>
+          <div class="rifa-info-painel">
             <h3>${rifa.nome}</h3>
             <p>🎁 ${rifa.premio}</p>
             <p>💰 R$ ${rifa.valor}</p>
             <p>📲 PIX: ${rifa.chavePix || 'Não informado'}</p>
+
+            <div class="vendas-resumo">
+              <div>
+                <span>Vendidos</span>
+                <strong>${vendidos}</strong>
+              </div>
+
+              <div>
+                <span>Disponíveis</span>
+                <strong>${disponiveis}</strong>
+              </div>
+
+              <div>
+                <span>Total</span>
+                <strong>${total}</strong>
+              </div>
+            </div>
+
+            <div class="progresso-vendas">
+              <div style="width: ${porcentagem}%"></div>
+            </div>
           </div>
 
           <div class="rifa-actions">
@@ -188,6 +221,7 @@
       const dados = await res.json();
 
       alert(dados.mensagem || `Número sorteado: ${dados.numero}`);
+      carregarRifas();
     }
 
     function sair() {
