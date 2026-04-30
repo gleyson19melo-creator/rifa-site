@@ -142,9 +142,9 @@ app.get('/rifa/:id', async (req, res) => {
   });
 });
 
-// Comprar número
+// 🔥 COMPRA VÁRIOS NÚMEROS
 app.post('/comprar-numero', async (req, res) => {
-  const { rifaId, comprador } = req.body;
+  const { rifaId, comprador, quantidade } = req.body;
 
   const ref = db.collection('rifas').doc(rifaId);
   const doc = await ref.get();
@@ -154,6 +154,7 @@ app.post('/comprar-numero', async (req, res) => {
   }
 
   const rifa = doc.data();
+  const qtd = Number(quantidade) || 1;
 
   const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel');
 
@@ -161,20 +162,39 @@ app.post('/comprar-numero', async (req, res) => {
     return res.json({ mensagem: 'Todos os números já foram vendidos ❌', sucesso: false });
   }
 
-  const sorteado = disponiveis[Math.floor(Math.random() * disponiveis.length)];
+  if (qtd > disponiveis.length) {
+    return res.json({
+      mensagem: `Só restam ${disponiveis.length} números disponíveis ❌`,
+      sucesso: false
+    });
+  }
 
-  const numerosAtualizados = rifa.numeros.map(n => {
-    if (n.numero === sorteado.numero) {
-      return { ...n, status: 'vendido', comprador };
-    }
-    return n;
-  });
+  const numerosComprados = [];
 
-  await ref.update({ numeros: numerosAtualizados });
+  for (let i = 0; i < qtd; i++) {
+    const livres = rifa.numeros.filter(n => n.status === 'disponivel');
+    const sorteado = livres[Math.floor(Math.random() * livres.length)];
+
+    rifa.numeros = rifa.numeros.map(n => {
+      if (n.numero === sorteado.numero) {
+        return {
+          ...n,
+          status: 'vendido',
+          comprador: comprador || 'Comprador'
+        };
+      }
+      return n;
+    });
+
+    numerosComprados.push(sorteado.numero);
+  }
+
+  await ref.update({ numeros: rifa.numeros });
 
   res.json({
-    mensagem: `Compra realizada! Número ${sorteado.numero} 🍀`,
-    sucesso: true
+    mensagem: `Compra realizada! Seus números: ${numerosComprados.join(', ')} 🍀`,
+    sucesso: true,
+    numeros: numerosComprados
   });
 });
 
@@ -218,7 +238,7 @@ app.post('/sortear-ganhador', async (req, res) => {
   });
 });
 
-// 🔒 EXCLUIR RIFA (REGRA NOVA)
+// Excluir rifa
 app.delete('/excluir-rifa/:id', async (req, res) => {
   const id = req.params.id;
 
@@ -230,10 +250,8 @@ app.delete('/excluir-rifa/:id', async (req, res) => {
   }
 
   const rifa = doc.data();
-
   const temVendidos = rifa.numeros.some(n => n.status === 'vendido');
 
-  // 🔥 REGRA INTELIGENTE
   if (temVendidos && !rifa.ganhador) {
     return res.json({
       mensagem: 'Sorteie o ganhador antes de excluir ❌',
