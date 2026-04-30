@@ -68,7 +68,6 @@
         </div>
       </div>
 
-      <div id="resultadoSorteio"></div>
       <div id="lista" class="rifas-lista"></div>
     </section>
 
@@ -123,7 +122,7 @@
           <div class="rifa-actions">
             <a href="${link}" target="_blank" class="btn">Ver rifa</a>
             <button onclick="copiarLink('${link}')">Copiar link</button>
-            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}', '${rifa.nome}')">Sortear ganhador 🏆</button>
+            <button class="btn-sortear" onclick="sortearGanhador('${rifa.id}')">Sortear ganhador 🏆</button>
           </div>
         `;
 
@@ -157,7 +156,7 @@
       alert("Link copiado!");
     }
 
-    async function sortearGanhador(rifaId, nomeRifa) {
+    async function sortearGanhador(rifaId) {
       const confirmar = confirm("Tem certeza que deseja sortear o ganhador desta rifa?");
 
       if (!confirmar) {
@@ -172,31 +171,8 @@
 
       const dados = await res.json();
 
-      const areaResultado = document.getElementById('resultadoSorteio');
-
-      if (dados.sucesso && dados.ganhador) {
-        areaResultado.innerHTML = `
-          <div class="resultado-sorteio">
-            <div class="resultado-icon">🏆</div>
-
-            <div>
-              <span>Resultado do sorteio</span>
-              <h3>${nomeRifa}</h3>
-              <p>Número sorteado: <strong>${dados.ganhador.numero}</strong></p>
-              <p>Ganhador: <strong>${dados.ganhador.comprador}</strong></p>
-            </div>
-          </div>
-        `;
-      } else {
-        areaResultado.innerHTML = `
-          <div class="resultado-sorteio erro-sorteio">
-            <div class="resultado-icon">⚠️</div>
-            <div>
-              <span>Atenção</span>
-              <p>${dados.mensagem}</p>
-            </div>
-          </div>
-        `;
+      if (!dados.sucesso) {
+        alert(dados.mensagem);
       }
 
       carregarRifas();
