@@ -105,6 +105,12 @@
 
         const link = `/rifa.html?id=${rifa.id}`;
 
+        const vendidos = rifa.numeros.filter(n => n.status === 'vendido').length;
+        const total = Number(rifa.quantidade);
+        const valor = Number(rifa.valor);
+        const arrecadado = vendidos * valor;
+        const percentual = total > 0 ? Math.round((vendidos / total) * 100) : 0;
+
         let ganhadorTexto = '';
 
         if (rifa.ganhador) {
@@ -116,10 +122,32 @@
         }
 
         card.innerHTML = `
-          <div>
+          <div class="rifa-info-painel">
             <h3>${rifa.nome}</h3>
             <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
             <p>R$ ${rifa.valor} por número • ${rifa.quantidade} números</p>
+
+            <div class="vendas-resumo">
+              <div>
+                <span>Vendidos</span>
+                <strong>${vendidos}</strong>
+              </div>
+
+              <div>
+                <span>Arrecadado</span>
+                <strong>R$ ${arrecadado.toFixed(2)}</strong>
+              </div>
+
+              <div>
+                <span>Progresso</span>
+                <strong>${percentual}%</strong>
+              </div>
+            </div>
+
+            <div class="progresso-vendas">
+              <div style="width: ${percentual}%"></div>
+            </div>
+
             ${ganhadorTexto}
           </div>
 
