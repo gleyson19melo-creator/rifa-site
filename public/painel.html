@@ -2,29 +2,76 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <h2>Painel do Usuário</h2>
-  <p id="usuarioLogado"></p>
 
-  <button onclick="sair()">Sair</button>
+  <main class="dashboard-page">
 
-  <h3>Criar nova rifa</h3>
+    <header class="dashboard-header">
+      <div>
+        <span class="dash-badge">🍀 RifaPro</span>
+        <h1>Painel do Usuário</h1>
+        <p id="usuarioLogado"></p>
+      </div>
 
-  <form id="formRifa">
-    <input type="text" placeholder="Nome da rifa" id="nome" required><br><br>
-    <input type="number" placeholder="Valor do número" id="valor" required><br><br>
-    <input type="number" placeholder="Quantidade de números" id="quantidade" required><br><br>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </header>
 
-    <button type="submit">Criar Rifa</button>
-  </form>
+    <section class="dashboard-grid">
+      <div class="dash-card form-card">
+        <h2>Criar nova rifa</h2>
+        <p>Preencha os dados abaixo para gerar sua rifa online.</p>
 
-  <p id="msg"></p>
+        <form id="formRifa">
+          <label>Nome da rifa</label>
+          <input type="text" placeholder="Ex: Rifa do iPhone" id="nome" required>
 
-  <h3>Minhas rifas</h3>
-  <ul id="lista"></ul>
+          <label>Valor do número</label>
+          <input type="number" placeholder="Ex: 5" id="valor" required>
+
+          <label>Quantidade de números</label>
+          <input type="number" placeholder="Ex: 100" id="quantidade" required>
+
+          <button type="submit" class="btn-criar">Criar rifa</button>
+        </form>
+
+        <p id="msg" class="dash-msg"></p>
+      </div>
+
+      <div class="dash-card info-card">
+        <h2>Resumo</h2>
+
+        <div class="stat">
+          <span>Minhas rifas</span>
+          <strong id="totalRifas">0</strong>
+        </div>
+
+        <div class="stat">
+          <span>Status</span>
+          <strong>Ativo</strong>
+        </div>
+
+        <p class="info-text">
+          Depois de criar uma rifa, copie o link público e compartilhe com seus participantes.
+        </p>
+      </div>
+    </section>
+
+    <section class="dash-card">
+      <div class="section-title">
+        <div>
+          <h2>Minhas rifas</h2>
+          <p>Gerencie e compartilhe suas rifas criadas.</p>
+        </div>
+      </div>
+
+      <div id="lista" class="rifas-lista"></div>
+    </section>
+
+  </main>
 
   <script>
     const form = document.getElementById('formRifa');
@@ -42,17 +89,32 @@
       const rifas = await res.json();
 
       lista.innerHTML = '';
+      document.getElementById('totalRifas').innerText = rifas.length;
+
+      if (rifas.length === 0) {
+        lista.innerHTML = `<div class="empty">Você ainda não criou nenhuma rifa.</div>`;
+        return;
+      }
 
       rifas.forEach(rifa => {
-        const li = document.createElement('li');
+        const card = document.createElement('div');
+        card.className = 'rifa-item';
 
-        li.innerHTML = `
-          <strong>${rifa.nome}</strong> - R$ ${rifa.valor} - ${rifa.quantidade} números
-          <br>
-          <a href="/rifa.html?id=${rifa.id}" target="_blank">Ver página da rifa</a>
+        const link = `/rifa.html?id=${rifa.id}`;
+
+        card.innerHTML = `
+          <div>
+            <h3>${rifa.nome}</h3>
+            <p>R$ ${rifa.valor} por número • ${rifa.quantidade} números</p>
+          </div>
+
+          <div class="rifa-actions">
+            <a href="${link}" target="_blank" class="btn">Ver rifa</a>
+            <button onclick="copiarLink('${link}')">Copiar link</button>
+          </div>
         `;
 
-        lista.appendChild(li);
+        lista.appendChild(card);
       });
     }
 
@@ -75,6 +137,12 @@
       form.reset();
       carregarRifas();
     });
+
+    function copiarLink(link) {
+      const urlCompleta = window.location.origin + link;
+      navigator.clipboard.writeText(urlCompleta);
+      alert("Link copiado!");
+    }
 
     function sair() {
       localStorage.removeItem('usuario');

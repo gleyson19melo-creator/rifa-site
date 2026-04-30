@@ -479,3 +479,162 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+.dashboard-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 18px;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+  color: white;
+  padding: 30px;
+  border-radius: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.16);
+  margin-bottom: 25px;
+}
+
+.dashboard-header h1 {
+  margin: 12px 0 6px;
+  font-size: 36px;
+}
+
+.dashboard-header p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.dash-badge {
+  background: rgba(255,255,255,0.18);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: bold;
+}
+
+.btn-sair {
+  background: #ef4444;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+.dash-card {
+  background: white;
+  border-radius: 26px;
+  padding: 28px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+}
+
+.dash-card h2 {
+  margin-bottom: 8px;
+}
+
+.dash-card p {
+  color: #6b7280;
+}
+
+.form-card label {
+  display: block;
+  font-weight: bold;
+  margin: 12px 0 8px;
+}
+
+.btn-criar {
+  width: 100%;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+.dash-msg {
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.stat {
+  background: #f4f6fb;
+  padding: 18px;
+  border-radius: 18px;
+  margin-bottom: 14px;
+}
+
+.stat span {
+  display: block;
+  color: #6b7280;
+}
+
+.stat strong {
+  font-size: 28px;
+}
+
+.info-text {
+  margin-top: 16px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rifas-lista {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.rifa-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  padding: 18px;
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+}
+
+.rifa-item h3 {
+  margin: 0 0 6px;
+}
+
+.rifa-item p {
+  margin: 0;
+}
+
+.rifa-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.empty {
+  background: #f4f6fb;
+  padding: 22px;
+  border-radius: 18px;
+  color: #6b7280;
+  text-align: center;
+}
+
+@media (max-width: 850px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rifa-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
