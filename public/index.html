@@ -34,7 +34,7 @@
         </p>
 
         <div class="hero-buttons">
-          <a href="/cadastro.html" class="btn">Começar agora</a>
+          <a href="/login.html" class="btn">Começar agora</a>
           <a href="/login.html" class="btn btn-outline">Já tenho conta</a>
         </div>
       </div>
@@ -54,11 +54,10 @@
           <span>42</span>
         </div>
 
-        <a href="/cadastro.html" class="btn">Criar minha rifa</a>
+        <a href="/login.html" class="btn">Criar minha rifa</a>
       </div>
     </section>
 
-    <!-- 🔥 NOVA PARTE -->
     <section class="rifas-publicas">
       <h2>Rifas disponíveis</h2>
       <p>Escolha uma rifa e compre seus números automaticamente.</p>
@@ -89,8 +88,8 @@
       <div class="steps-grid">
         <div>
           <strong>1</strong>
-          <h3>Crie sua conta</h3>
-          <p>Entre no RifaPro e acesse seu painel.</p>
+          <h3>Entre na sua conta</h3>
+          <p>Acesse o RifaPro pelo login ou crie sua conta.</p>
         </div>
 
         <div>
@@ -113,7 +112,6 @@
 
   </main>
 
-  <!-- 🔥 SCRIPT DAS RIFAS -->
   <script>
     async function carregarRifasPublicas() {
       const res = await fetch('/rifas-publicas');
