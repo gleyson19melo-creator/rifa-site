@@ -129,10 +129,22 @@
         const card = document.createElement('div');
         card.className = 'rifa-home-card';
 
+        let ganhadorHome = '';
+
+        if (rifa.ganhador) {
+          ganhadorHome = `
+            <div class="ganhador-home">
+              🏆 Ganhador: número ${rifa.ganhador.numero}<br>
+              <strong>${rifa.ganhador.comprador}</strong>
+            </div>
+          `;
+        }
+
         card.innerHTML = `
           <h3>${rifa.nome}</h3>
           <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
           <p>Total: ${rifa.quantidade} números</p>
+          ${ganhadorHome}
           <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
         `;
 

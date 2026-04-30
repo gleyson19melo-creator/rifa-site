@@ -647,3 +647,13 @@ input:focus {
 .erro-sorteio p {
   color: #991b1b;
 }
+.ganhador-home {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 12px;
+  border-radius: 14px;
+  margin: 12px 0;
+  font-weight: bold;
+  text-align: center;
+}
