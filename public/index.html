@@ -114,63 +114,76 @@
 
   <script>
     async function carregarRifasPublicas() {
-      const res = await fetch('/rifas-publicas');
-      const rifas = await res.json();
+      try {
+        const res = await fetch('/rifas-publicas');
 
-      const lista = document.getElementById('rifasDisponiveis');
-      lista.innerHTML = '';
-
-      if (rifas.length === 0) {
-        lista.innerHTML = '<p>Nenhuma rifa disponível no momento.</p>';
-        return;
-      }
-
-      rifas.forEach(rifa => {
-        const card = document.createElement('div');
-        card.className = 'rifa-home-card';
-
-        const linkRifa = `${window.location.origin}/rifa.html?id=${rifa.id}`;
-
-        let statusRifa = '';
-        let botoesRifa = '';
-
-        if (rifa.ganhador) {
-          statusRifa = `
-            <div class="ganhador-home">
-              <span class="badge-finalizada">FINALIZADA</span><br><br>
-              🏆 Ganhador: número ${rifa.ganhador.numero}<br>
-              <strong>${rifa.ganhador.comprador}</strong>
-            </div>
-          `;
-
-          botoesRifa = `
-            <a href="/rifa.html?id=${rifa.id}" class="btn btn-resultado">Ver resultado 🏆</a>
-
-            <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}', '${linkRifa}')">
-              Compartilhar resultado
-            </button>
-          `;
-        } else {
-          botoesRifa = `
-            <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
-
-            <button class="btn-whatsapp" onclick="compartilharRifa('${rifa.nome}', '${rifa.premio || 'Não informado'}', '${rifa.valor}', '${linkRifa}')">
-              Compartilhar no WhatsApp
-            </button>
-          `;
+        if (!res.ok) {
+          throw new Error('Erro ao buscar rifas públicas');
         }
 
-        card.innerHTML = `
-          <h3>${rifa.nome}</h3>
-          <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
-          <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
-          <p>Total: ${rifa.quantidade} números</p>
-          ${statusRifa}
-          ${botoesRifa}
-        `;
+        const rifas = await res.json();
 
-        lista.appendChild(card);
-      });
+        const lista = document.getElementById('rifasDisponiveis');
+        lista.innerHTML = '';
+
+        if (!rifas || rifas.length === 0) {
+          lista.innerHTML = '<p>Nenhuma rifa disponível no momento.</p>';
+          return;
+        }
+
+        rifas.forEach(rifa => {
+          const card = document.createElement('div');
+          card.className = 'rifa-home-card';
+
+          const linkRifa = `${window.location.origin}/rifa.html?id=${rifa.id}`;
+
+          let statusRifa = '';
+          let botoesRifa = '';
+
+          if (rifa.ganhador) {
+            statusRifa = `
+              <div class="ganhador-home">
+                <span class="badge-finalizada">FINALIZADA</span><br><br>
+                🏆 Ganhador: número ${rifa.ganhador.numero}<br>
+                <strong>${rifa.ganhador.comprador}</strong>
+              </div>
+            `;
+
+            botoesRifa = `
+              <a href="/rifa.html?id=${rifa.id}" class="btn btn-resultado">Ver resultado 🏆</a>
+
+              <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}', '${linkRifa}')">
+                Compartilhar resultado
+              </button>
+            `;
+          } else {
+            botoesRifa = `
+              <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
+
+              <button class="btn-whatsapp" onclick="compartilharRifa('${rifa.nome}', '${rifa.premio || 'Não informado'}', '${rifa.valor}', '${linkRifa}')">
+                Compartilhar no WhatsApp
+              </button>
+            `;
+          }
+
+          card.innerHTML = `
+            <h3>${rifa.nome}</h3>
+            <p>🎁 Prêmio: <strong>${rifa.premio || 'Não informado'}</strong></p>
+            <p>Valor: <strong>R$ ${rifa.valor}</strong></p>
+            <p>Total: ${rifa.quantidade} números</p>
+            ${statusRifa}
+            ${botoesRifa}
+          `;
+
+          lista.appendChild(card);
+        });
+
+      } catch (erro) {
+        console.error(erro);
+
+        const lista = document.getElementById('rifasDisponiveis');
+        lista.innerHTML = '<p>Erro ao carregar rifas 😢</p>';
+      }
     }
 
     function compartilharRifa(nomeRifa, premio, valor, link) {

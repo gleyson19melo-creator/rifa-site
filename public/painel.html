@@ -1,106 +1,40 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel | RifaPro</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
-<body>
+<script>
+  const form = document.getElementById('formRifa');
+  const lista = document.getElementById('lista');
+  const usuario = localStorage.getItem('usuario');
 
-  <main class="dashboard-page">
+  if (!usuario) {
+    window.location.replace("/login.html");
+  }
 
-    <header class="dashboard-header">
-      <div>
-        <span class="dash-badge">🍀 RifaPro</span>
-        <h1>Painel do Usuário</h1>
-        <p id="usuarioLogado"></p>
-      </div>
+  document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
 
-      <button class="btn-sair" onclick="sair()">Sair</button>
-    </header>
+  const campoValor = document.getElementById('valor');
 
-    <section class="dashboard-grid">
-      <div class="dash-card form-card">
-        <h2>Criar nova rifa</h2>
-        <p>Preencha os dados abaixo para gerar sua rifa online.</p>
+  campoValor.addEventListener('input', () => {
+    let valor = campoValor.value.replace(/\D/g, '');
+    valor = (Number(valor) / 100).toFixed(2);
+    valor = valor.replace('.', ',');
+    campoValor.value = valor;
+  });
 
-        <form id="formRifa">
-          <label>Nome da rifa</label>
-          <input type="text" placeholder="Ex: Rifa do iPhone" id="nome" required>
-
-          <label>Prêmio da rifa</label>
-          <input type="text" placeholder="Ex: iPhone 15" id="premio" required>
-
-          <label>Valor do número</label>
-          <input type="text" placeholder="Ex: 0,50" id="valor" required>
-
-          <label>Quantidade de números</label>
-          <input type="number" placeholder="Ex: 100" id="quantidade" required>
-
-          <label>Chave PIX</label>
-          <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
-
-          <button type="submit" class="btn-criar">Criar rifa</button>
-        </form>
-
-        <p id="msg" class="dash-msg"></p>
-      </div>
-
-      <div class="dash-card info-card">
-        <h2>Resumo</h2>
-
-        <div class="stat">
-          <span>Minhas rifas</span>
-          <strong id="totalRifas">0</strong>
-        </div>
-
-        <div class="stat">
-          <span>Status</span>
-          <strong>Ativo</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="dash-card">
-      <div class="section-title">
-        <div>
-          <h2>Minhas rifas</h2>
-          <p>Gerencie, compartilhe e sorteie suas rifas criadas.</p>
-        </div>
-      </div>
-
-      <div id="lista" class="rifas-lista"></div>
-    </section>
-
-  </main>
-
-  <script>
-    const form = document.getElementById('formRifa');
-    const lista = document.getElementById('lista');
-    const usuario = localStorage.getItem('usuario');
-
-    if (!usuario) {
-      window.location.replace("/login.html");
-    }
-
-    document.getElementById('usuarioLogado').innerText = "Logado como: " + usuario;
-
-    const campoValor = document.getElementById('valor');
-
-    campoValor.addEventListener('input', () => {
-      let valor = campoValor.value.replace(/\D/g, '');
-      valor = (Number(valor) / 100).toFixed(2);
-      valor = valor.replace('.', ',');
-      campoValor.value = valor;
-    });
-
-    async function carregarRifas() {
+  async function carregarRifas() {
+    try {
       const res = await fetch(`/rifas/${usuario}`);
+
+      if (!res.ok) {
+        throw new Error("Erro ao carregar rifas");
+      }
+
       const rifas = await res.json();
 
       lista.innerHTML = '';
       document.getElementById('totalRifas').innerText = rifas.length;
+
+      if (!rifas || rifas.length === 0) {
+        lista.innerHTML = '<p>Nenhuma rifa criada ainda.</p>';
+        return;
+      }
 
       rifas.forEach(rifa => {
         const card = document.createElement('div');
@@ -220,11 +154,17 @@
 
         lista.appendChild(card);
       });
+
+    } catch (erro) {
+      console.error(erro);
+      lista.innerHTML = '<p>Erro ao carregar suas rifas 😢</p>';
     }
+  }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
+    try {
       const nome = document.getElementById('nome').value;
       const premio = document.getElementById('premio').value;
       const valor = document.getElementById('valor').value.replace(',', '.');
@@ -247,11 +187,19 @@
       const dados = await res.json();
       document.getElementById('msg').innerText = dados.mensagem;
 
-      form.reset();
-      carregarRifas();
-    });
+      if (dados.sucesso) {
+        form.reset();
+        carregarRifas();
+      }
 
-    async function confirmar(rifaId, numero) {
+    } catch (erro) {
+      console.error(erro);
+      document.getElementById('msg').innerText = "Erro ao criar rifa ❌";
+    }
+  });
+
+  async function confirmar(rifaId, numero) {
+    try {
       const res = await fetch('/confirmar-pagamento', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,9 +213,15 @@
       const dados = await res.json();
       alert(dados.mensagem);
       carregarRifas();
-    }
 
-    async function cancelar(rifaId, numero) {
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao confirmar pagamento ❌");
+    }
+  }
+
+  async function cancelar(rifaId, numero) {
+    try {
       const res = await fetch('/cancelar-reserva', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -281,12 +235,18 @@
       const dados = await res.json();
       alert(dados.mensagem);
       carregarRifas();
+
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao cancelar reserva ❌");
     }
+  }
 
-    async function sortear(id) {
-      const confirmarSorteio = confirm("Tem certeza que quer sortear essa rifa?");
-      if (!confirmarSorteio) return;
+  async function sortear(id) {
+    const confirmarSorteio = confirm("Tem certeza que quer sortear essa rifa?");
+    if (!confirmarSorteio) return;
 
+    try {
       const res = await fetch('/sortear-ganhador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -296,12 +256,18 @@
       const dados = await res.json();
       alert(dados.mensagem);
       carregarRifas();
+
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao sortear rifa ❌");
     }
+  }
 
-    async function excluirRifa(id) {
-      const confirmar = confirm("Tem certeza que quer excluir essa rifa?");
-      if (!confirmar) return;
+  async function excluirRifa(id) {
+    const confirmar = confirm("Tem certeza que quer excluir essa rifa?");
+    if (!confirmar) return;
 
+    try {
       const res = await fetch(`/excluir-rifa/${id}`, {
         method: 'DELETE'
       });
@@ -310,22 +276,24 @@
       alert(dados.mensagem || "Rifa excluída com sucesso!");
 
       carregarRifas();
+
+    } catch (erro) {
+      console.error(erro);
+      alert("Erro ao excluir rifa ❌");
     }
+  }
 
-    function togglePendentes(id) {
-      const box = document.getElementById(`pendentes-${id}`);
-      if (!box) return;
+  function togglePendentes(id) {
+    const box = document.getElementById(`pendentes-${id}`);
+    if (!box) return;
 
-      box.style.display = box.style.display === 'none' ? 'block' : 'none';
-    }
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
 
-    function sair() {
-      localStorage.removeItem('usuario');
-      window.location.replace("/login.html");
-    }
+  function sair() {
+    localStorage.removeItem('usuario');
+    window.location.replace("/login.html");
+  }
 
-    carregarRifas();
-  </script>
-
-</body>
-</html>
+  carregarRifas();
+</script>
