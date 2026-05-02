@@ -1,171 +1,236 @@
-<script>
-const params = new URLSearchParams(window.location.search);
-const id = params.get('id');
-let rifaAtual = null;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comprar Rifa | RifaPro</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
 
-function setTexto(elementId, texto) {
-  const elemento = document.getElementById(elementId);
-  if (elemento) {
-    elemento.innerText = texto;
-  }
-}
+  <main class="rifa-page">
 
-async function carregarRifa() {
-  try {
-    if (!id) {
-      document.body.innerHTML = "<h2 class='erro'>ID da rifa não encontrado ❌</h2>";
-      return;
-    }
+    <section class="rifa-hero">
+      <div class="rifa-badge">🍀 RifaPro</div>
 
-    const res = await fetch(`/rifa/${id}`);
+      <h1 id="nomeRifa">Carregando...</h1>
 
-    if (!res.ok) {
-      throw new Error("Erro ao buscar rifa");
-    }
+      <p>
+        🎁 Prêmio:
+        <strong id="premioRifa">Carregando...</strong>
+      </p>
 
-    const rifa = await res.json();
+      <p>
+        💰 Valor do número:
+        <strong id="valorRifa">Carregando...</strong>
+      </p>
 
-    if (!rifa) {
-      document.body.innerHTML = "<h2 class='erro'>Rifa não encontrada ❌</h2>";
-      return;
-    }
+      <p>
+        🎟️ Disponíveis:
+        <strong id="disponiveis">0</strong>
+      </p>
 
-    rifaAtual = rifa;
+      <p id="totalNumerosInfo">Total: 0 números</p>
+    </section>
 
-    const areaCompra = document.getElementById('areaCompra');
-    const resultadoFinal = document.getElementById('resultadoFinal');
+    <section id="resultadoFinal" style="display:none;"></section>
 
-    if (rifa.ganhador) {
-      if (areaCompra) areaCompra.style.display = "none";
+    <section id="areaCompra" class="rifa-compra">
+      <h2>Comprar número</h2>
 
-      if (resultadoFinal) {
-        resultadoFinal.style.display = "block";
-        resultadoFinal.innerHTML = `
-          <div style="padding:20px; background:#dcfce7; border-radius:12px;">
-            <span class="badge-finalizada">FINALIZADA</span><br><br>
-            <h2>🏆 Resultado do sorteio</h2>
-            <p><strong>🎁 Rifa:</strong> ${rifa.nome}</p>
-            <p><strong>👤 Ganhador:</strong> ${rifa.ganhador.comprador}</p>
-            <p><strong>🎟️ Número:</strong> ${rifa.ganhador.numero}</p>
-          </div>
-        `;
+      <label>Seu nome</label>
+      <input type="text" id="comprador" placeholder="Digite seu nome">
 
-        setTimeout(() => {
-          resultadoFinal.scrollIntoView({ behavior: 'smooth' });
-        }, 300);
+      <label>WhatsApp</label>
+      <input type="text" id="whatsapp" placeholder="Digite seu WhatsApp">
+
+      <label>Quantidade de números</label>
+      <input type="number" id="quantidadeCompra" value="1" min="1">
+
+      <button onclick="comprarNumero()" class="btn">
+        Comprar número 🍀
+      </button>
+
+      <p id="resultado" style="display:none;"></p>
+
+      <div class="pix-box">
+        <h3>Chave PIX</h3>
+        <p id="pixRifa">Carregando...</p>
+        <button onclick="copiarPix()" class="btn-whatsapp">
+          Copiar PIX
+        </button>
+      </div>
+    </section>
+
+    <section class="numeros-area">
+      <h2>Números da rifa</h2>
+      <div id="numeros" class="numeros"></div>
+    </section>
+
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    let rifaAtual = null;
+
+    function setTexto(elementId, texto) {
+      const elemento = document.getElementById(elementId);
+      if (elemento) {
+        elemento.innerText = texto;
       }
-    } else {
-      if (areaCompra) areaCompra.style.display = "block";
-      if (resultadoFinal) resultadoFinal.style.display = "none";
     }
 
-    setTexto('nomeRifa', rifa.nome);
-    setTexto('premioRifa', rifa.premio || 'Não informado');
-    setTexto('valorRifa', "R$ " + rifa.valor);
-    setTexto('pixRifa', rifa.chavePix || 'Não informado');
-
-    const numeros = rifa.numeros || [];
-    const disponiveis = numeros.filter(n => n.status === 'disponivel').length;
-
-    setTexto('disponiveis', disponiveis);
-    setTexto('totalNumerosInfo', "Total: " + (rifa.quantidade || numeros.length) + " números");
-
-    const numerosDiv = document.getElementById('numeros');
-
-    if (numerosDiv) {
-      numerosDiv.innerHTML = '';
-
-      numeros.forEach(n => {
-        const btn = document.createElement('button');
-
-        if (n.status === 'vendido') {
-          btn.innerText = n.numero + " ❌";
-          btn.className = "numero vendido";
-          btn.disabled = true;
-        } else if (n.status === 'pendente') {
-          btn.innerText = n.numero + " ⏳";
-          btn.className = "numero pendente";
-          btn.disabled = true;
-        } else {
-          btn.innerText = n.numero + " ✅";
-          btn.className = "numero disponivel";
+    async function carregarRifa() {
+      try {
+        if (!id) {
+          document.body.innerHTML = "<h2 class='erro'>ID da rifa não encontrado ❌</h2>";
+          return;
         }
 
-        numerosDiv.appendChild(btn);
-      });
+        const res = await fetch(`/rifa/${id}`);
+
+        if (!res.ok) {
+          throw new Error("Erro ao buscar rifa");
+        }
+
+        const rifa = await res.json();
+
+        if (!rifa) {
+          document.body.innerHTML = "<h2 class='erro'>Rifa não encontrada ❌</h2>";
+          return;
+        }
+
+        rifaAtual = rifa;
+
+        const areaCompra = document.getElementById('areaCompra');
+        const resultadoFinal = document.getElementById('resultadoFinal');
+
+        if (rifa.ganhador) {
+          if (areaCompra) areaCompra.style.display = "none";
+
+          if (resultadoFinal) {
+            resultadoFinal.style.display = "block";
+            resultadoFinal.innerHTML = `
+              <div style="padding:20px; background:#dcfce7; border-radius:12px;">
+                <span class="badge-finalizada">FINALIZADA</span><br><br>
+                <h2>🏆 Resultado do sorteio</h2>
+                <p><strong>🎁 Rifa:</strong> ${rifa.nome}</p>
+                <p><strong>👤 Ganhador:</strong> ${rifa.ganhador.comprador}</p>
+                <p><strong>🎟️ Número:</strong> ${rifa.ganhador.numero}</p>
+              </div>
+            `;
+          }
+        } else {
+          if (areaCompra) areaCompra.style.display = "block";
+          if (resultadoFinal) resultadoFinal.style.display = "none";
+        }
+
+        setTexto('nomeRifa', rifa.nome);
+        setTexto('premioRifa', rifa.premio || 'Não informado');
+        setTexto('valorRifa', "R$ " + rifa.valor);
+        setTexto('pixRifa', rifa.chavePix || 'Não informado');
+
+        const numeros = rifa.numeros || [];
+        const disponiveis = numeros.filter(n => n.status === 'disponivel').length;
+
+        setTexto('disponiveis', disponiveis);
+        setTexto('totalNumerosInfo', "Total: " + (rifa.quantidade || numeros.length) + " números");
+
+        const numerosDiv = document.getElementById('numeros');
+
+        if (numerosDiv) {
+          numerosDiv.innerHTML = '';
+
+          numeros.forEach(n => {
+            const btn = document.createElement('button');
+
+            if (n.status === 'vendido') {
+              btn.innerText = n.numero + " ❌";
+              btn.className = "numero vendido";
+              btn.disabled = true;
+            } else if (n.status === 'pendente') {
+              btn.innerText = n.numero + " ⏳";
+              btn.className = "numero pendente";
+              btn.disabled = true;
+            } else {
+              btn.innerText = n.numero + " ✅";
+              btn.className = "numero disponivel";
+            }
+
+            numerosDiv.appendChild(btn);
+          });
+        }
+
+      } catch (erro) {
+        console.error(erro);
+        document.body.innerHTML = "<h2 class='erro'>Erro ao carregar a rifa ❌</h2>";
+      }
     }
 
-  } catch (erro) {
-    console.error(erro);
-    document.body.innerHTML = "<h2 class='erro'>Erro ao carregar a rifa ❌</h2>";
-  }
-}
+    async function comprarNumero() {
+      try {
+        const compradorInput = document.getElementById('comprador');
+        const whatsappInput = document.getElementById('whatsapp');
+        const quantidadeInput = document.getElementById('quantidadeCompra');
+        const resultado = document.getElementById('resultado');
 
-async function comprarNumero() {
-  try {
-    const compradorInput = document.getElementById('comprador');
-    const whatsappInput = document.getElementById('whatsapp');
-    const quantidadeInput = document.getElementById('quantidadeCompra');
-    const resultado = document.getElementById('resultado');
+        const comprador = compradorInput.value.trim();
+        const whatsapp = whatsappInput.value.trim();
+        const quantidade = quantidadeInput.value;
 
-    if (!compradorInput || !whatsappInput || !quantidadeInput || !resultado) {
-      alert("Erro: campos da compra não encontrados no HTML ❌");
-      return;
+        if (!comprador) {
+          alert("Digite seu nome");
+          return;
+        }
+
+        if (!whatsapp) {
+          alert("Digite seu WhatsApp");
+          return;
+        }
+
+        resultado.innerText = "Reservando número...";
+        resultado.style.display = "block";
+
+        const res = await fetch('/comprar-numero', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
+        });
+
+        const dados = await res.json();
+
+        resultado.innerText = dados.mensagem || "Resposta recebida.";
+        resultado.style.display = "block";
+
+        carregarRifa();
+
+      } catch (erro) {
+        console.error(erro);
+        alert("Erro ao comprar número ❌");
+      }
     }
 
-    const comprador = compradorInput.value.trim();
-    const whatsapp = whatsappInput.value.trim();
-    const quantidade = quantidadeInput.value;
+    function copiarPix() {
+      const pixElemento = document.getElementById('pixRifa');
 
-    if (!comprador) {
-      alert("Digite seu nome");
-      return;
+      if (!pixElemento) {
+        alert("Chave PIX não encontrada ❌");
+        return;
+      }
+
+      const pix = pixElemento.innerText;
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(pix);
+        alert("Chave PIX copiada!");
+      } else {
+        alert("Copie a chave PIX manualmente: " + pix);
+      }
     }
-
-    if (!whatsapp) {
-      alert("Digite seu WhatsApp");
-      return;
-    }
-
-    resultado.innerText = "Reservando número...";
-    resultado.style.display = "block";
-
-    const res = await fetch('/comprar-numero', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
-    });
-
-    const dados = await res.json();
-
-    resultado.innerText = dados.mensagem || "Resposta recebida.";
-    resultado.style.display = "block";
 
     carregarRifa();
+  </script>
 
-  } catch (erro) {
-    console.error(erro);
-    alert("Erro ao comprar número ❌");
-  }
-}
-
-function copiarPix() {
-  const pixElemento = document.getElementById('pixRifa');
-
-  if (!pixElemento) {
-    alert("Chave PIX não encontrada ❌");
-    return;
-  }
-
-  const pix = pixElemento.innerText;
-
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(pix);
-    alert("Chave PIX copiada!");
-  } else {
-    alert("Copie a chave PIX manualmente: " + pix);
-  }
-}
-
-carregarRifa();
-</script>
+</body>
+</html>
