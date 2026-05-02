@@ -114,16 +114,17 @@
 
   <script>
     async function carregarRifasPublicas() {
+      const lista = document.getElementById('rifasDisponiveis');
+
       try {
         const res = await fetch('/rifas-publicas');
 
         if (!res.ok) {
-          throw new Error('Erro ao buscar rifas públicas');
+          throw new Error('Erro ao buscar rifas');
         }
 
         const rifas = await res.json();
 
-        const lista = document.getElementById('rifasDisponiveis');
         lista.innerHTML = '';
 
         if (!rifas || rifas.length === 0) {
@@ -151,7 +152,6 @@
 
             botoesRifa = `
               <a href="/rifa.html?id=${rifa.id}" class="btn btn-resultado">Ver resultado 🏆</a>
-
               <button class="btn-whatsapp" onclick="compartilharResultado('${rifa.nome}', '${rifa.ganhador.numero}', '${rifa.ganhador.comprador}', '${linkRifa}')">
                 Compartilhar resultado
               </button>
@@ -159,7 +159,6 @@
           } else {
             botoesRifa = `
               <a href="/rifa.html?id=${rifa.id}" class="btn">Comprar número 🍀</a>
-
               <button class="btn-whatsapp" onclick="compartilharRifa('${rifa.nome}', '${rifa.premio || 'Não informado'}', '${rifa.valor}', '${linkRifa}')">
                 Compartilhar no WhatsApp
               </button>
@@ -180,8 +179,6 @@
 
       } catch (erro) {
         console.error(erro);
-
-        const lista = document.getElementById('rifasDisponiveis');
         lista.innerHTML = '<p>Erro ao carregar rifas 😢</p>';
       }
     }
@@ -190,7 +187,6 @@
       const texto = encodeURIComponent(
         `🍀 Participe dessa rifa!\n\n🎁 Rifa: ${nomeRifa}\n🏆 Prêmio: ${premio}\n💰 Valor: R$ ${valor}\n\n👉 Acesse aqui: ${link}`
       );
-
       window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 
@@ -198,7 +194,6 @@
       const texto = encodeURIComponent(
         `🏆 Resultado da rifa ${nomeRifa}\n\n🎉 Ganhador: ${comprador}\n🍀 Número sorteado: ${numero}\n\nVeja aqui: ${link}`
       );
-
       window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
 

@@ -36,25 +36,43 @@
 
   <script>
     const form = document.getElementById('formLogin');
+    const msg = document.getElementById('msg');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
+      try {
+        const email = document.getElementById('email').value.trim();
+        const senha = document.getElementById('senha').value.trim();
 
-      const resposta = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
+        if (!email || !senha) {
+          msg.innerText = "Preencha todos os campos ❌";
+          return;
+        }
 
-      const dados = await resposta.json();
-      document.getElementById('msg').innerText = dados.mensagem;
+        msg.innerText = "Entrando...";
 
-      if (dados.sucesso) {
-        localStorage.setItem('usuario', email);
-        window.location.href = "/painel.html";
+        const resposta = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+
+        const dados = await resposta.json();
+
+        msg.innerText = dados.mensagem;
+
+        if (dados.sucesso) {
+          localStorage.setItem('usuario', email);
+
+          setTimeout(() => {
+            window.location.href = "/painel.html";
+          }, 500);
+        }
+
+      } catch (erro) {
+        console.error(erro);
+        msg.innerText = "Erro ao conectar com o servidor ❌";
       }
     });
   </script>

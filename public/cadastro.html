@@ -39,27 +39,36 @@
 
   <script>
     const form = document.getElementById('formCadastro');
+    const msg = document.getElementById('msg');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const nome = document.getElementById('nome').value;
-      const email = document.getElementById('email').value;
-      const senha = document.getElementById('senha').value;
+      try {
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const senha = document.getElementById('senha').value.trim();
 
-      const resposta = await fetch('/cadastro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, senha })
-      });
+        msg.innerText = "Cadastrando...";
 
-      const dados = await resposta.json();
-      document.getElementById('msg').innerText = dados.mensagem;
+        const resposta = await fetch('/cadastro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, senha })
+        });
 
-      if (dados.sucesso) {
-        setTimeout(() => {
-          window.location.href = "/login.html";
-        }, 1000);
+        const dados = await resposta.json();
+        msg.innerText = dados.mensagem;
+
+        if (dados.sucesso) {
+          setTimeout(() => {
+            window.location.href = "/login.html";
+          }, 1000);
+        }
+
+      } catch (erro) {
+        console.error(erro);
+        msg.innerText = "Erro ao cadastrar. Tente novamente ❌";
       }
     });
   </script>
