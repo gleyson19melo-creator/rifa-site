@@ -7,6 +7,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const TEMPO_LIMITE_RESERVA = 10 * 60 * 1000;
+const ADMIN_EMAIL = "gleyson10ew@hotmail.com";
 
 let serviceAccount;
 
@@ -38,7 +39,6 @@ async function liberarReservasExpiradas() {
 
         if (expirou) {
           alterou = true;
-
           return {
             numero: n.numero,
             status: 'disponivel',
@@ -52,15 +52,11 @@ async function liberarReservasExpiradas() {
           };
         }
       }
-
       return n;
     });
 
     if (alterou) {
-      await db.collection('rifas').doc(doc.id).update({
-        numeros: novosNumeros
-      });
-
+      await db.collection('rifas').doc(doc.id).update({ numeros: novosNumeros });
       console.log(`Reservas expiradas liberadas na rifa: ${doc.id}`);
     }
   });
@@ -68,6 +64,10 @@ async function liberarReservasExpiradas() {
 
 setInterval(liberarReservasExpiradas, 60 * 1000);
 liberarReservasExpiradas();
+
+function verificarAdmin(email) {
+  return String(email || '').toLowerCase() === ADMIN_EMAIL.toLowerCase();
+}
 
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
@@ -88,6 +88,9 @@ app.post('/cadastro', async (req, res) => {
     nome,
     email,
     senha,
+    tipo: email === ADMIN_EMAIL ? 'admin' : 'usuario',
+    status: 'ativo',
+    plano: 'gratis',
     criadoEm: Date.now()
   });
 
@@ -106,11 +109,44 @@ app.post('/login', async (req, res) => {
     return res.json({ mensagem: 'Email ou senha incorretos ❌', sucesso: false });
   }
 
-  res.json({ mensagem: 'Login realizado com sucesso 🚀', sucesso: true });
+  const doc = snapshot.docs[0];
+  const usuario = doc.data();
+
+  if (usuario.status === 'bloqueado') {
+    return res.json({ mensagem: 'Usuário bloqueado pelo admin ❌', sucesso: false });
+  }
+
+  res.json({
+    mensagem: 'Login realizado com sucesso 🚀',
+    sucesso: true,
+    usuario: {
+      id: doc.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      tipo: usuario.tipo || 'usuario',
+      status: usuario.status || 'ativo',
+      plano: usuario.plano || 'gratis'
+    }
+  });
 });
 
 app.post('/criar-rifa', async (req, res) => {
   const { nome, valor, quantidade, usuario, premio, chavePix, whatsappDono } = req.body;
+
+  const usuarioSnap = await db.collection('usuarios')
+    .where('email', '==', usuario)
+    .get();
+
+  if (!usuarioSnap.empty) {
+    const userData = usuarioSnap.docs[0].data();
+
+    if (userData.status === 'bloqueado') {
+      return res.json({
+        mensagem: 'Sua conta está bloqueada pelo admin ❌',
+        sucesso: false
+      });
+    }
+  }
 
   const numeros = [];
 
@@ -156,10 +192,7 @@ app.get('/rifas/:usuario', async (req, res) => {
   const rifas = [];
 
   snapshot.forEach(doc => {
-    rifas.push({
-      id: doc.id,
-      ...doc.data()
-    });
+    rifas.push({ id: doc.id, ...doc.data() });
   });
 
   res.json(rifas);
@@ -172,10 +205,7 @@ app.get('/rifas-publicas', async (req, res) => {
   const rifas = [];
 
   snapshot.forEach(doc => {
-    rifas.push({
-      id: doc.id,
-      ...doc.data()
-    });
+    rifas.push({ id: doc.id, ...doc.data() });
   });
 
   res.json(rifas);
@@ -189,10 +219,7 @@ app.get('/rifa/:id', async (req, res) => {
 
     if (!doc.exists) return res.json(null);
 
-    res.json({
-      id: doc.id,
-      ...doc.data()
-    });
+    res.json({ id: doc.id, ...doc.data() });
 
   } catch (erro) {
     console.error("Erro ao buscar rifa:", erro);
@@ -270,7 +297,6 @@ app.post('/comprar-numero', async (req, res) => {
           reservadoEm: Date.now()
         };
       }
-
       return n;
     });
 
@@ -319,13 +345,8 @@ app.post('/confirmar-pagamento', async (req, res) => {
 
   const novosNumeros = rifa.numeros.map(n => {
     if (Number(n.numero) === Number(numero)) {
-      return {
-        ...n,
-        status: 'vendido',
-        pagoEm: Date.now()
-      };
+      return { ...n, status: 'vendido', pagoEm: Date.now() };
     }
-
     return n;
   });
 
@@ -374,7 +395,6 @@ app.post('/cancelar-reserva', async (req, res) => {
         reservadoEm: null
       };
     }
-
     return n;
   });
 
@@ -432,7 +452,6 @@ app.get('/sortear-rifa/:id', async (req, res) => {
   await liberarReservasExpiradas();
 
   const id = req.params.id;
-
   const ref = db.collection('rifas').doc(id);
   const doc = await ref.get();
 
@@ -475,7 +494,6 @@ app.delete('/excluir-rifa/:id', async (req, res) => {
   await liberarReservasExpiradas();
 
   const id = req.params.id;
-
   const ref = db.collection('rifas').doc(id);
   const doc = await ref.get();
 
@@ -496,6 +514,141 @@ app.delete('/excluir-rifa/:id', async (req, res) => {
   await ref.delete();
 
   res.json({ mensagem: 'Rifa excluída 🗑️', sucesso: true });
+});
+
+/* =========================
+   ROTAS DO ADMIN
+========================= */
+
+app.get('/admin/dados', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!verificarAdmin(email)) {
+      return res.json({
+        sucesso: false,
+        mensagem: 'Sem permissão de admin ❌'
+      });
+    }
+
+    const usuariosSnap = await db.collection('usuarios').get();
+    const rifasSnap = await db.collection('rifas').get();
+
+    const usuarios = [];
+    const rifas = [];
+
+    usuariosSnap.forEach(doc => {
+      usuarios.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    rifasSnap.forEach(doc => {
+      rifas.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    res.json({
+      sucesso: true,
+      usuarios,
+      rifas
+    });
+
+  } catch (erro) {
+    console.error("Erro admin:", erro);
+    res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao carregar admin ❌'
+    });
+  }
+});
+
+app.post('/admin/usuario/status', async (req, res) => {
+  try {
+    const { adminEmail, usuarioId, status } = req.body;
+
+    if (!verificarAdmin(adminEmail)) {
+      return res.json({
+        sucesso: false,
+        mensagem: 'Sem permissão ❌'
+      });
+    }
+
+    await db.collection('usuarios').doc(usuarioId).update({
+      status
+    });
+
+    res.json({
+      sucesso: true,
+      mensagem: `Usuário alterado para ${status} ✅`
+    });
+
+  } catch (erro) {
+    console.error("Erro ao alterar usuário:", erro);
+    res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao alterar usuário ❌'
+    });
+  }
+});
+
+app.delete('/admin/rifa/:id', async (req, res) => {
+  try {
+    const { adminEmail } = req.body;
+
+    if (!verificarAdmin(adminEmail)) {
+      return res.json({
+        sucesso: false,
+        mensagem: 'Sem permissão ❌'
+      });
+    }
+
+    await db.collection('rifas').doc(req.params.id).delete();
+
+    res.json({
+      sucesso: true,
+      mensagem: 'Rifa excluída pelo admin 🗑️'
+    });
+
+  } catch (erro) {
+    console.error("Erro ao excluir rifa admin:", erro);
+    res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao excluir rifa ❌'
+    });
+  }
+});
+
+app.post('/admin/usuario/plano', async (req, res) => {
+  try {
+    const { adminEmail, usuarioId, plano } = req.body;
+
+    if (!verificarAdmin(adminEmail)) {
+      return res.json({
+        sucesso: false,
+        mensagem: 'Sem permissão ❌'
+      });
+    }
+
+    await db.collection('usuarios').doc(usuarioId).update({
+      plano
+    });
+
+    res.json({
+      sucesso: true,
+      mensagem: `Plano alterado para ${plano} ✅`
+    });
+
+  } catch (erro) {
+    console.error("Erro ao alterar plano:", erro);
+    res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao alterar plano ❌'
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

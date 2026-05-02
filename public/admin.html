@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | RifaPro</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="dashboard-page">
+    <header class="dashboard-header">
+      <div>
+        <span class="dash-badge">👑 Admin RifaPro</span>
+        <h1>Painel Administrativo</h1>
+        <p id="adminInfo">Carregando...</p>
+      </div>
+
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </header>
+
+    <section class="dashboard-grid">
+      <div class="dash-card info-card">
+        <h2>Resumo</h2>
+
+        <div class="stat">
+          <span>Total de rifas</span>
+          <strong id="totalRifas">0</strong>
+        </div>
+
+        <div class="stat">
+          <span>Usuários</span>
+          <strong id="totalUsuarios">0</strong>
+        </div>
+
+        <div class="stat">
+          <span>Pendentes</span>
+          <strong id="totalPendentes">0</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-card">
+      <h2>Usuários cadastrados</h2>
+      <div id="listaUsuarios" class="rifas-lista"></div>
+    </section>
+
+    <section class="dash-card">
+      <h2>Todas as rifas</h2>
+      <div id="listaRifas" class="rifas-lista"></div>
+    </section>
+  </main>
+
+  <script>
+    const usuarioSalvo = localStorage.getItem("usuario");
+
+    if (!usuarioSalvo) {
+      window.location.href = "/login.html";
+    }
+
+    let adminEmail = "";
+
+    try {
+      const dados = JSON.parse(usuarioSalvo);
+      adminEmail = dados.email || "";
+    } catch {
+      adminEmail = usuarioSalvo;
+    }
+
+    document.getElementById("adminInfo").innerText = "Admin: " + adminEmail;
+
+    async function carregarAdmin() {
+      try {
+        const res = await fetch(`/admin/dados?email=${encodeURIComponent(adminEmail)}`);
+        const dados = await res.json();
+
+        if (!dados.sucesso) {
+          alert(dados.mensagem || "Sem permissão de admin ❌");
+          window.location.href = "/painel.html";
+          return;
+        }
+
+        document.getElementById("totalRifas").innerText = dados.rifas.length;
+        document.getElementById("totalUsuarios").innerText = dados.usuarios.length;
+
+        let pendentes = 0;
+        dados.rifas.forEach(rifa => {
+          pendentes += (rifa.numeros || []).filter(n => n.status === "pendente").length;
+        });
+
+        document.getElementById("totalPendentes").innerText = pendentes;
+
+        renderUsuarios(dados.usuarios);
+        renderRifas(dados.rifas);
+
+      } catch (erro) {
+        console.error(erro);
+        alert("Erro ao carregar painel admin ❌");
+      }
+    }
+
+    function renderUsuarios(usuarios) {
+      const lista = document.getElementById("listaUsuarios");
+      lista.innerHTML = "";
+
+      if (!usuarios.length) {
+        lista.innerHTML = "<p>Nenhum usuário encontrado.</p>";
+        return;
+      }
+
+      usuarios.forEach(user => {
+        const div = document.createElement("div");
+        div.className = "rifa-item";
+
+        div.innerHTML = `
+          <div class="rifa-info-painel">
+            <h3>${user.nome || "Sem nome"}</h3>
+            <p>📧 ${user.email || "Sem email"}</p>
+            <p>🔐 Tipo: ${user.tipo || "usuario"}</p>
+            <p>📌 Status: ${user.status || "ativo"}</p>
+            <p>💳 Plano: ${user.plano || "gratis"}</p>
+          </div>
+
+          <div class="rifa-actions">
+            <button class="btn-excluir" onclick="bloquearUsuario('${user.id}', '${user.status || "ativo"}')">
+              ${(user.status || "ativo") === "bloqueado" ? "Desbloquear" : "Bloquear"}
+            </button>
+          </div>
+        `;
+
+        lista.appendChild(div);
+      });
+    }
+
+    function renderRifas(rifas) {
+      const lista = document.getElementById("listaRifas");
+      lista.innerHTML = "";
+
+      if (!rifas.length) {
+        lista.innerHTML = "<p>Nenhuma rifa encontrada.</p>";
+        return;
+      }
+
+      rifas.forEach(rifa => {
+        const numeros = rifa.numeros || [];
+        const vendidos = numeros.filter(n => n.status === "vendido").length;
+        const pendentes = numeros.filter(n => n.status === "pendente").length;
+
+        const div = document.createElement("div");
+        div.className = "rifa-item";
+
+        div.innerHTML = `
+          <div class="rifa-info-painel">
+            <h3>${rifa.nome}</h3>
+            <p>👤 Dono: ${rifa.usuario || "Não informado"}</p>
+            <p>🎁 Prêmio: ${rifa.premio || "Não informado"}</p>
+            <p>💰 Valor: R$ ${rifa.valor}</p>
+            <p>✅ Vendidos: ${vendidos}</p>
+            <p>⏳ Pendentes: ${pendentes}</p>
+            <p>📌 Status: ${rifa.ganhador ? "Finalizada" : "Ativa"}</p>
+          </div>
+
+          <div class="rifa-actions">
+            <a href="/rifa.html?id=${rifa.id}" target="_blank" class="btn">Ver rifa</a>
+            <button class="btn-excluir" onclick="excluirRifaAdmin('${rifa.id}')">Excluir</button>
+          </div>
+        `;
+
+        lista.appendChild(div);
+      });
+    }
+
+    async function bloquearUsuario(id, statusAtual) {
+      const novoStatus = statusAtual === "bloqueado" ? "ativo" : "bloqueado";
+
+      const confirmar = confirm(`Deseja alterar o usuário para ${novoStatus}?`);
+      if (!confirmar) return;
+
+      const res = await fetch("/admin/usuario/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminEmail, usuarioId: id, status: novoStatus })
+      });
+
+      const dados = await res.json();
+      alert(dados.mensagem);
+      carregarAdmin();
+    }
+
+    async function excluirRifaAdmin(id) {
+      const confirmar = confirm("Tem certeza que quer excluir essa rifa como admin?");
+      if (!confirmar) return;
+
+      const res = await fetch(`/admin/rifa/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminEmail })
+      });
+
+      const dados = await res.json();
+      alert(dados.mensagem);
+      carregarAdmin();
+    }
+
+    function sair() {
+      localStorage.clear();
+      window.location.href = "/login.html";
+    }
+
+    carregarAdmin();
+  </script>
+</body>
+</html>
