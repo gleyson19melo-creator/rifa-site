@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login | RifaPro</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="auth-logo">👑</div>
+
+      <h1>Login Admin</h1>
+      <p>Acesso restrito ao administrador</p>
+
+      <form id="formAdmin">
+        <label>Email</label>
+        <input type="email" id="email" required>
+
+        <label>Senha</label>
+        <input type="password" id="senha" required>
+
+        <button type="submit" class="auth-btn">Entrar como Admin</button>
+      </form>
+
+      <p id="msg" class="auth-msg"></p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('formAdmin');
+    const msg = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+
+      msg.innerText = "Entrando...";
+
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const dados = await res.json();
+
+      if (!dados.sucesso) {
+        msg.innerText = dados.mensagem;
+        return;
+      }
+
+      // 🔥 FORÇA SER ADMIN
+      if (email !== "SEU_EMAIL_ADMIN_AQUI") {
+        msg.innerText = "Você não é admin ❌";
+        return;
+      }
+
+      localStorage.setItem("admin", JSON.stringify({
+        email
+      }));
+
+      window.location.href = "/admin.html";
+    });
+  </script>
+
+</body>
+</html>

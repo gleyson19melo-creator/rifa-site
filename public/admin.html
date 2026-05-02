@@ -51,24 +51,24 @@
   </main>
 
   <script>
-    const usuarioSalvo = localStorage.getItem("usuario");
+    const adminSalvo = localStorage.getItem("admin");
 
-    if (!usuarioSalvo) {
-      window.location.replace("/login.html");
+    if (!adminSalvo) {
+      window.location.replace("/admin-login.html");
     }
 
     let adminEmail = "";
 
     try {
-      const dados = JSON.parse(usuarioSalvo);
+      const dados = JSON.parse(adminSalvo);
 
       if (!dados.email) {
-        window.location.replace("/login.html");
+        window.location.replace("/admin-login.html");
       }
 
       adminEmail = dados.email;
     } catch {
-      window.location.replace("/login.html");
+      window.location.replace("/admin-login.html");
     }
 
     document.getElementById("adminInfo").innerText = "Admin: " + adminEmail;
@@ -80,7 +80,8 @@
 
         if (!dados.sucesso) {
           alert(dados.mensagem || "Sem permissão de admin ❌");
-          window.location.href = "/painel.html";
+          localStorage.removeItem("admin");
+          window.location.href = "/admin-login.html";
           return;
         }
 
@@ -208,8 +209,8 @@
     }
 
     function sair() {
-      localStorage.clear();
-      window.location.href = "/login.html";
+      localStorage.removeItem("admin");
+      window.location.href = "/admin-login.html";
     }
 
     carregarAdmin();
