@@ -45,6 +45,7 @@ async function liberarReservasExpiradas() {
             comprador: null,
             whatsapp: null,
             compradorEmail: null,
+            compradorNomeGoogle: null,
             compradorUid: null,
             tipoLogin: null,
             reservadoEm: null
@@ -109,7 +110,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/criar-rifa', async (req, res) => {
-  const { nome, valor, quantidade, usuario, premio, chavePix } = req.body;
+  const { nome, valor, quantidade, usuario, premio, chavePix, whatsappDono } = req.body;
 
   const numeros = [];
 
@@ -120,6 +121,7 @@ app.post('/criar-rifa', async (req, res) => {
       comprador: null,
       whatsapp: null,
       compradorEmail: null,
+      compradorNomeGoogle: null,
       compradorUid: null,
       tipoLogin: null,
       reservadoEm: null
@@ -133,6 +135,7 @@ app.post('/criar-rifa', async (req, res) => {
     usuario,
     premio: premio || 'Não informado',
     chavePix: chavePix || 'Não informado',
+    whatsappDono: whatsappDono || 'Não informado',
     numeros,
     ganhador: null,
     criadoEm: Date.now()
@@ -263,7 +266,7 @@ app.post('/comprar-numero', async (req, res) => {
           compradorEmail: compradorEmail || '',
           compradorNomeGoogle: compradorNomeGoogle || '',
           compradorUid: compradorUid || '',
-          tipoLogin: tipoLogin || 'normal',
+          tipoLogin: tipoLogin || 'visitante',
           reservadoEm: Date.now()
         };
       }
@@ -279,7 +282,8 @@ app.post('/comprar-numero', async (req, res) => {
   res.json({
     mensagem: `Reserva realizada! Seus números: ${numerosComprados.join(', ')} ⏳ Você tem 10 minutos para pagar.`,
     sucesso: true,
-    numeros: numerosComprados
+    numeros: numerosComprados,
+    whatsappDono: rifa.whatsappDono || ''
   });
 });
 

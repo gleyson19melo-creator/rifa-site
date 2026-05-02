@@ -49,6 +49,9 @@
           <label>Chave PIX</label>
           <input type="text" placeholder="Ex: seuemail@gmail.com" id="chavePix" required>
 
+          <label>WhatsApp para receber comprovante</label>
+          <input type="text" placeholder="Ex: 71999999999" id="whatsappDono" required>
+
           <button type="submit" class="btn-criar">Criar rifa</button>
         </form>
 
@@ -251,6 +254,7 @@
               <p>🎁 ${rifa.premio || 'Não informado'}</p>
               <p>💰 R$ ${rifa.valor}</p>
               <p>📲 PIX: ${rifa.chavePix || 'Não informado'}</p>
+              <p>📩 WhatsApp comprovante: ${rifa.whatsappDono || 'Não informado'}</p>
 
               <div class="vendas-resumo">
                 <div>
@@ -311,6 +315,12 @@
           const valor = document.getElementById('valor').value.replace(',', '.');
           const quantidade = document.getElementById('quantidade').value;
           const chavePix = document.getElementById('chavePix').value.trim();
+          const whatsappDono = document.getElementById('whatsappDono').value.trim();
+
+          if (!whatsappDono || whatsappDono.replace(/\D/g, '').length < 10) {
+            alert("Digite um WhatsApp válido para receber comprovante");
+            return;
+          }
 
           const res = await fetch('/criar-rifa', {
             method: 'POST',
@@ -321,7 +331,8 @@
               valor,
               quantidade,
               usuario,
-              chavePix
+              chavePix,
+              whatsappDono
             })
           });
 
