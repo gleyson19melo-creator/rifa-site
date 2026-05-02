@@ -19,18 +19,10 @@
       <p>💰 Valor do número: <strong id="valorRifa">Carregando...</strong></p>
       <p>🎟️ Disponíveis: <strong id="disponiveis">0</strong></p>
       <p id="totalNumerosInfo">Total: 0 números</p>
-
-      <p id="usuarioCompraInfo" style="margin-top:12px;"></p>
+      <p id="usuarioCompraInfo" style="margin-top:12px;">⚡ Compra rápida, sem precisar de login!</p>
     </section>
 
     <section id="resultadoFinal" style="display:none;"></section>
-
-    <section id="areaLoginNecessario" class="rifa-compra" style="display:none;">
-      <h2>Entre para comprar 🔒</h2>
-      <p>Para participar dessa rifa, faça login ou crie sua conta.</p>
-      <a href="/login.html" class="btn">Entrar agora</a>
-      <a href="/cadastro.html" class="btn btn-outline">Criar conta</a>
-    </section>
 
     <section id="areaCompra" class="rifa-compra">
       <h2>Comprar número</h2>
@@ -71,56 +63,6 @@
     const id = params.get('id');
 
     let rifaAtual = null;
-    let usuarioLogado = null;
-    let usuarioEmail = '';
-    let usuarioNome = '';
-
-    function pegarUsuarioLogado() {
-      const usuarioSalvo = localStorage.getItem("usuario");
-
-      if (!usuarioSalvo) return null;
-
-      try {
-        const dados = JSON.parse(usuarioSalvo);
-        return dados;
-      } catch {
-        return {
-          email: usuarioSalvo,
-          nome: usuarioSalvo,
-          tipo: "normal"
-        };
-      }
-    }
-
-    function prepararUsuario() {
-      usuarioLogado = pegarUsuarioLogado();
-
-      const areaCompra = document.getElementById("areaCompra");
-      const areaLoginNecessario = document.getElementById("areaLoginNecessario");
-      const usuarioCompraInfo = document.getElementById("usuarioCompraInfo");
-      const compradorInput = document.getElementById("comprador");
-
-      if (!usuarioLogado || !usuarioLogado.email) {
-        if (areaCompra) areaCompra.style.display = "none";
-        if (areaLoginNecessario) areaLoginNecessario.style.display = "block";
-        if (usuarioCompraInfo) usuarioCompraInfo.innerText = "🔒 Faça login para comprar números.";
-        return;
-      }
-
-      usuarioEmail = usuarioLogado.email;
-      usuarioNome = usuarioLogado.nome || usuarioLogado.email;
-
-      if (areaCompra) areaCompra.style.display = "block";
-      if (areaLoginNecessario) areaLoginNecessario.style.display = "none";
-
-      if (usuarioCompraInfo) {
-        usuarioCompraInfo.innerText = "👤 Comprando como: " + usuarioNome + " (" + usuarioEmail + ")";
-      }
-
-      if (compradorInput && !compradorInput.value) {
-        compradorInput.value = usuarioNome;
-      }
-    }
 
     function setTexto(elementId, texto) {
       const elemento = document.getElementById(elementId);
@@ -133,8 +75,6 @@
           document.body.innerHTML = "<h2 class='erro'>ID da rifa não encontrado ❌</h2>";
           return;
         }
-
-        prepararUsuario();
 
         const res = await fetch(`/rifa/${id}`);
 
@@ -150,12 +90,10 @@
         rifaAtual = rifa;
 
         const areaCompra = document.getElementById('areaCompra');
-        const areaLoginNecessario = document.getElementById('areaLoginNecessario');
         const resultadoFinal = document.getElementById('resultadoFinal');
 
         if (rifa.ganhador) {
           if (areaCompra) areaCompra.style.display = "none";
-          if (areaLoginNecessario) areaLoginNecessario.style.display = "none";
 
           if (resultadoFinal) {
             resultadoFinal.style.display = "block";
@@ -170,8 +108,8 @@
             `;
           }
         } else {
+          if (areaCompra) areaCompra.style.display = "block";
           if (resultadoFinal) resultadoFinal.style.display = "none";
-          prepararUsuario();
         }
 
         setTexto('nomeRifa', rifa.nome);
@@ -218,14 +156,6 @@
 
     async function comprarNumero() {
       try {
-        prepararUsuario();
-
-        if (!usuarioLogado || !usuarioEmail) {
-          alert("Você precisa entrar para comprar essa rifa 🔒");
-          window.location.href = "/login.html";
-          return;
-        }
-
         const compradorInput = document.getElementById('comprador');
         const whatsappInput = document.getElementById('whatsapp');
         const quantidadeInput = document.getElementById('quantidadeCompra');
@@ -261,10 +191,10 @@
             comprador,
             whatsapp,
             quantidade,
-            compradorEmail: usuarioEmail,
-            compradorNomeGoogle: usuarioNome,
-            compradorUid: usuarioLogado.uid || null,
-            tipoLogin: usuarioLogado.tipo || "normal"
+            compradorEmail: "",
+            compradorNomeGoogle: "",
+            compradorUid: "",
+            tipoLogin: "visitante"
           })
         });
 
