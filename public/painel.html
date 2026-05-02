@@ -74,7 +74,7 @@
       <div class="section-title">
         <div>
           <h2>Minhas rifas</h2>
-          <p>Gerencie, compartilhe e sorteie suas rifas criadas.</p>
+          <p>Gerencie, compartilhe, confirme pagamentos e sorteie suas rifas.</p>
         </div>
       </div>
 
@@ -120,6 +120,50 @@
         valor = valor.replace('.', ',');
         campoValor.value = valor;
       });
+    }
+
+    function formatarData(timestamp) {
+      if (!timestamp) return 'Não informado';
+      return new Date(timestamp).toLocaleString('pt-BR');
+    }
+
+    function criarCardComprador(n, rifaId) {
+      const textoWhatsApp = encodeURIComponent(
+        `Olá ${n.comprador || 'cliente'}! Sua reserva na rifa foi feita.\n\n` +
+        `🎟️ Número: ${n.numero}\n` +
+        `⏳ Status: Pendente\n\n` +
+        `Após o pagamento, seu número será confirmado.`
+      );
+
+      const whatsappLimpo = String(n.whatsapp || '').replace(/\D/g, '');
+
+      return `
+        <div style="margin-top:10px; padding:14px; background:#fff8db; border-radius:14px; border:1px solid #facc15;">
+          <strong>⏳ Número ${n.numero}</strong><br><br>
+
+          👤 Cliente: <strong>${n.comprador || 'Não informado'}</strong><br>
+          📧 Email: ${n.compradorEmail || 'Não informado'}<br>
+          📲 WhatsApp: ${n.whatsapp || 'Não informado'}<br>
+          🔐 Login: ${n.tipoLogin || 'normal'}<br>
+          🕒 Reservado em: ${formatarData(n.reservadoEm)}<br><br>
+
+          <button onclick="confirmar('${rifaId}', ${n.numero})">
+            Confirmar pagamento ✅
+          </button>
+
+          <button onclick="cancelar('${rifaId}', ${n.numero})">
+            Cancelar reserva ❌
+          </button>
+
+          ${
+            whatsappLimpo
+              ? `<a href="https://wa.me/55${whatsappLimpo}?text=${textoWhatsApp}" target="_blank" class="btn-whatsapp" style="display:inline-block; margin-top:8px;">
+                  Chamar no WhatsApp 📲
+                </a>`
+              : ''
+          }
+        </div>
+      `;
     }
 
     async function carregarRifas() {
@@ -180,7 +224,9 @@
               <div class="ganhador-home">
                 <span class="badge-finalizada">FINALIZADA</span><br><br>
                 🏆 Ganhador: ${rifa.ganhador.comprador}<br>
-                🎟️ Número: ${rifa.ganhador.numero}<br><br>
+                🎟️ Número: ${rifa.ganhador.numero}<br>
+                📧 Email: ${rifa.ganhador.compradorEmail || 'Não informado'}<br>
+                📲 WhatsApp: ${rifa.ganhador.whatsapp || 'Não informado'}<br><br>
 
                 <a class="btn-whatsapp" href="https://wa.me/?text=${textoResultado}" target="_blank">
                   Enviar resultado no WhatsApp 📲
@@ -191,25 +237,11 @@
 
           const blocoPendentes = pendentes.length > 0 ? `
             <button class="btn" onclick="togglePendentes('${rifa.id}')">
-              Ver reservas pendentes (${pendentes.length})
+              Ver compradores pendentes (${pendentes.length})
             </button>
 
             <div id="pendentes-${rifa.id}" style="display:none; margin-top:12px;">
-              ${pendentes.map(n => `
-                <div style="margin-top:10px; padding:12px; background:#fff3cd; border-radius:12px;">
-                  <strong>⏳ Número ${n.numero}</strong><br>
-                  Cliente: ${n.comprador || 'Não informado'}<br>
-                  WhatsApp: ${n.whatsapp || 'Não informado'}<br><br>
-
-                  <button onclick="confirmar('${rifa.id}', ${n.numero})">
-                    Confirmar pagamento
-                  </button>
-
-                  <button onclick="cancelar('${rifa.id}', ${n.numero})">
-                    Cancelar
-                  </button>
-                </div>
-              `).join('')}
+              ${pendentes.map(n => criarCardComprador(n, rifa.id)).join('')}
             </div>
           ` : '';
 
