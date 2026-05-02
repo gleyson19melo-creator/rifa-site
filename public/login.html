@@ -39,7 +39,6 @@
         <button type="submit" class="auth-btn" id="btnLogin">Entrar agora</button>
       </form>
 
-      <!-- BOTÃO GOOGLE -->
       <button type="button" class="google-btn" id="btnGoogle">
         Entrar com Google
       </button>
@@ -53,7 +52,6 @@
     </section>
   </main>
 
-  <!-- 🔥 SCRIPT COMPLETO -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
@@ -76,7 +74,6 @@
     const btnLogin = document.getElementById('btnLogin');
     const btnGoogle = document.getElementById('btnGoogle');
 
-    // 🔐 LOGIN NORMAL
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -102,12 +99,19 @@
         const dados = await resposta.json();
 
         if (dados.sucesso) {
-          localStorage.setItem('usuario', JSON.stringify({
+          const usuarioFinal = dados.usuario || {
             email: email,
             tipo: "normal"
-          }));
+          };
 
-          window.location.href = "/painel.html";
+          localStorage.setItem('usuario', JSON.stringify(usuarioFinal));
+
+          if (usuarioFinal.tipo === "admin") {
+            window.location.href = "/admin.html";
+          } else {
+            window.location.href = "/painel.html";
+          }
+
           return;
         }
 
@@ -123,7 +127,6 @@
       }
     });
 
-    // 🔥 LOGIN GOOGLE
     btnGoogle.addEventListener('click', async () => {
       try {
         msg.innerText = "Abrindo Google...";
@@ -132,13 +135,15 @@
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        localStorage.setItem('usuario', JSON.stringify({
+        const usuarioGoogle = {
           nome: user.displayName,
           email: user.email,
           foto: user.photoURL,
           uid: user.uid,
           tipo: "google"
-        }));
+        };
+
+        localStorage.setItem('usuario', JSON.stringify(usuarioGoogle));
 
         window.location.href = "/painel.html";
 

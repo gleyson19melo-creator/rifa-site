@@ -54,16 +54,21 @@
     const usuarioSalvo = localStorage.getItem("usuario");
 
     if (!usuarioSalvo) {
-      window.location.href = "/login.html";
+      window.location.replace("/login.html");
     }
 
     let adminEmail = "";
 
     try {
       const dados = JSON.parse(usuarioSalvo);
-      adminEmail = dados.email || "";
+
+      if (!dados.email) {
+        window.location.replace("/login.html");
+      }
+
+      adminEmail = dados.email;
     } catch {
-      adminEmail = usuarioSalvo;
+      window.location.replace("/login.html");
     }
 
     document.getElementById("adminInfo").innerText = "Admin: " + adminEmail;
@@ -83,6 +88,7 @@
         document.getElementById("totalUsuarios").innerText = dados.usuarios.length;
 
         let pendentes = 0;
+
         dados.rifas.forEach(rifa => {
           pendentes += (rifa.numeros || []).filter(n => n.status === "pendente").length;
         });
