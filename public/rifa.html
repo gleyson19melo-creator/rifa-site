@@ -19,7 +19,14 @@
       <p>💰 Valor do número: <strong id="valorRifa">Carregando...</strong></p>
       <p>🎟️ Disponíveis: <strong id="disponiveis">0</strong></p>
       <p id="totalNumerosInfo">Total: 0 números</p>
-      <p id="usuarioCompraInfo" style="margin-top:12px;">⚡ Compra rápida, sem precisar de login!</p>
+
+      <p id="usuarioCompraInfo" style="margin-top:12px;">
+        ⚡ Compra rápida, sem precisar de login!
+      </p>
+
+      <div style="margin-top:14px; padding:14px; background:#fff3cd; border-radius:12px;">
+        ⚠️ <strong>Atenção:</strong> seu número só participa do sorteio após a confirmação do pagamento.
+      </div>
     </section>
 
     <section id="resultadoFinal" style="display:none;"></section>
@@ -132,7 +139,7 @@
             const btn = document.createElement('button');
 
             if (n.status === 'vendido') {
-              btn.innerText = n.numero + " ❌";
+              btn.innerText = n.numero + " ✅";
               btn.className = "numero vendido";
               btn.disabled = true;
             } else if (n.status === 'pendente') {
@@ -140,7 +147,7 @@
               btn.className = "numero pendente";
               btn.disabled = true;
             } else {
-              btn.innerText = n.numero + " ✅";
+              btn.innerText = n.numero + " 🍀";
               btn.className = "numero disponivel";
             }
 
@@ -165,13 +172,13 @@
         const whatsapp = whatsappInput.value.trim();
         const quantidade = quantidadeInput.value;
 
-        if (!comprador) {
-          alert("Digite seu nome");
+        if (!comprador || comprador.length < 3) {
+          alert("Digite um nome válido");
           return;
         }
 
-        if (!whatsapp) {
-          alert("Digite seu WhatsApp");
+        if (!whatsapp || whatsapp.replace(/\D/g, '').length < 10) {
+          alert("Digite um WhatsApp válido");
           return;
         }
 
@@ -200,7 +207,10 @@
 
         const dados = await res.json();
 
-        resultado.innerText = dados.mensagem || "Resposta recebida.";
+        resultado.innerText =
+          (dados.mensagem || "Reserva recebida.") +
+          "\n\n⚠️ Seu número ficou pendente. Ele só participa do sorteio após a confirmação do pagamento.";
+
         resultado.style.display = "block";
 
         carregarRifa();
