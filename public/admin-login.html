@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login | RifaPro</title>
+  <title>Admin Secreto | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -13,16 +13,21 @@
       <div class="auth-logo">👑</div>
 
       <h1>Login Admin</h1>
-      <p>Acesso restrito ao administrador</p>
+      <p>Acesso restrito ao administrador do RifaPro.</p>
 
       <form id="formAdmin">
         <label>Email</label>
-        <input type="email" id="email" required>
+        <input type="email" id="email" placeholder="Email admin" required>
 
         <label>Senha</label>
-        <input type="password" id="senha" required>
+        <input type="password" id="senha" placeholder="Senha da conta" required>
 
-        <button type="submit" class="auth-btn">Entrar como Admin</button>
+        <label>Código secreto</label>
+        <input type="password" id="codigoAdmin" placeholder="Código admin" required>
+
+        <button type="submit" class="auth-btn" id="btnAdmin">
+          Entrar como Admin
+        </button>
       </form>
 
       <p id="msg" class="auth-msg"></p>
@@ -32,39 +37,70 @@
   <script>
     const form = document.getElementById('formAdmin');
     const msg = document.getElementById('msg');
+    const btnAdmin = document.getElementById('btnAdmin');
+
+    const CODIGO_ADMIN = "RIFAPRO2026";
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const email = document.getElementById('email').value.trim();
       const senha = document.getElementById('senha').value.trim();
+      const codigoAdmin = document.getElementById('codigoAdmin').value.trim();
 
-      msg.innerText = "Entrando...";
-
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
-
-      const dados = await res.json();
-
-      if (!dados.sucesso) {
-        msg.innerText = dados.mensagem;
+      if (!email || !senha || !codigoAdmin) {
+        msg.innerText = "Preencha todos os campos ❌";
         return;
       }
 
-      // 🔥 FORÇA SER ADMIN
-      if (email !== "SEU_EMAIL_ADMIN_AQUI") {
-        msg.innerText = "Você não é admin ❌";
+      if (codigoAdmin !== CODIGO_ADMIN) {
+        msg.innerText = "Código secreto incorreto ❌";
         return;
       }
 
-      localStorage.setItem("admin", JSON.stringify({
-        email
-      }));
+      try {
+        msg.innerText = "Entrando...";
+        btnAdmin.disabled = true;
+        btnAdmin.innerText = "Entrando...";
 
-      window.location.href = "/admin.html";
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, senha })
+        });
+
+        const dados = await res.json();
+
+        if (!dados.sucesso) {
+          msg.innerText = dados.mensagem || "Login inválido ❌";
+          btnAdmin.disabled = false;
+          btnAdmin.innerText = "Entrar como Admin";
+          return;
+        }
+
+        const permissao = await fetch(`/admin/dados?email=${encodeURIComponent(email)}`);
+        const dadosAdmin = await permissao.json();
+
+        if (!dadosAdmin.sucesso) {
+          msg.innerText = "Você não tem permissão de admin ❌";
+          btnAdmin.disabled = false;
+          btnAdmin.innerText = "Entrar como Admin";
+          return;
+        }
+
+        localStorage.setItem("admin", JSON.stringify({
+          email,
+          loginAdmin: true
+        }));
+
+        window.location.href = "/admin.html";
+
+      } catch (erro) {
+        console.error(erro);
+        msg.innerText = "Erro ao conectar ❌";
+        btnAdmin.disabled = false;
+        btnAdmin.innerText = "Entrar como Admin";
+      }
     });
   </script>
 
