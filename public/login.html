@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Entrar | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
+
+  <style>
+    .google-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: #fff;
+      color: #222;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
@@ -25,6 +39,11 @@
         <button type="submit" class="auth-btn" id="btnLogin">Entrar agora</button>
       </form>
 
+      <!-- BOTÃO GOOGLE -->
+      <button type="button" class="google-btn" id="btnGoogle">
+        Entrar com Google
+      </button>
+
       <p id="msg" class="auth-msg"></p>
 
       <div class="auth-footer">
@@ -34,11 +53,30 @@
     </section>
   </main>
 
-  <script>
+  <!-- 🔥 SCRIPT COMPLETO -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDecbp1orm8r9Ry0Ys5bDZzREqOY_WdW9o",
+      authDomain: "rifapro-19eb6.firebaseapp.com",
+      projectId: "rifapro-19eb6",
+      storageBucket: "rifapro-19eb6.firebasestorage.app",
+      messagingSenderId: "235188882307",
+      appId: "1:235188882307:web:abee8e9d9df05ff52b84b6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
     const form = document.getElementById('formLogin');
     const msg = document.getElementById('msg');
     const btnLogin = document.getElementById('btnLogin');
+    const btnGoogle = document.getElementById('btnGoogle');
 
+    // 🔐 LOGIN NORMAL
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -62,22 +100,52 @@
         });
 
         const dados = await resposta.json();
-        msg.innerText = dados.mensagem || "Resposta recebida";
 
         if (dados.sucesso) {
-          localStorage.setItem('usuario', email);
+          localStorage.setItem('usuario', JSON.stringify({
+            email: email,
+            tipo: "normal"
+          }));
+
           window.location.href = "/painel.html";
           return;
         }
 
+        msg.innerText = dados.mensagem || "Erro ao logar ❌";
         btnLogin.disabled = false;
         btnLogin.innerText = "Entrar agora";
 
       } catch (erro) {
         console.error(erro);
-        msg.innerText = "Erro ao conectar com o servidor ❌";
+        msg.innerText = "Erro ao conectar ❌";
         btnLogin.disabled = false;
         btnLogin.innerText = "Entrar agora";
+      }
+    });
+
+    // 🔥 LOGIN GOOGLE
+    btnGoogle.addEventListener('click', async () => {
+      try {
+        msg.innerText = "Abrindo Google...";
+        btnGoogle.disabled = true;
+
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        localStorage.setItem('usuario', JSON.stringify({
+          nome: user.displayName,
+          email: user.email,
+          foto: user.photoURL,
+          uid: user.uid,
+          tipo: "google"
+        }));
+
+        window.location.href = "/painel.html";
+
+      } catch (erro) {
+        console.error(erro);
+        msg.innerText = "Erro ao entrar com Google ❌";
+        btnGoogle.disabled = false;
       }
     });
   </script>
