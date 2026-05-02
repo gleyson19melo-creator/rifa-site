@@ -184,19 +184,28 @@ app.get('/rifas-publicas', async (req, res) => {
 
 // Buscar rifa
 app.get('/rifa/:id', async (req, res) => {
-  await liberarReservasExpiradas();
+  try {
+    await liberarReservasExpiradas();
 
-  const doc = await db.collection('rifas').doc(req.params.id).get();
+    const doc = await db.collection('rifas').doc(req.params.id).get();
 
-  if (!doc.exists) return res.json(null);
+    if (!doc.exists) return res.json(null);
 
-  res.json({
-    id: doc.id,
-    ...doc.data()
-  });
+    res.json({
+      id: doc.id,
+      ...doc.data()
+    });
+
+  } catch (erro) {
+    console.error("Erro ao buscar rifa:", erro);
+    res.status(500).json({
+      mensagem: "Erro ao buscar rifa",
+      sucesso: false
+    });
+  }
 });
 
-// 🚨 CORREÇÃO AQUI
+// Comprar vários números - fica PENDENTE
 app.post('/comprar-numero', async (req, res) => {
   await liberarReservasExpiradas();
 
@@ -211,7 +220,6 @@ app.post('/comprar-numero', async (req, res) => {
 
   const rifa = doc.data();
 
-  // 🔥 BLOQUEIO SE JÁ FOI SORTEADA
   if (rifa.ganhador) {
     return res.json({
       mensagem: 'Essa rifa já foi sorteada 🏆 Não é mais possível comprar.',
@@ -266,4 +274,215 @@ app.post('/comprar-numero', async (req, res) => {
   });
 });
 
-// resto do código continua igual...
+// Confirmar pagamento
+app.post('/confirmar-pagamento', async (req, res) => {
+  const { rifaId, numero, usuario } = req.body;
+
+  const ref = db.collection('rifas').doc(rifaId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (usuario && rifa.usuario !== usuario) {
+    return res.json({ mensagem: 'Sem permissão ❌', sucesso: false });
+  }
+
+  const numeroAtual = rifa.numeros.find(n => Number(n.numero) === Number(numero));
+
+  if (!numeroAtual) {
+    return res.json({ mensagem: 'Número não encontrado ❌', sucesso: false });
+  }
+
+  if (numeroAtual.status === 'vendido') {
+    return res.json({ mensagem: 'Esse número já está vendido ✅', sucesso: true });
+  }
+
+  if (numeroAtual.status !== 'pendente') {
+    return res.json({ mensagem: 'Esse número não está pendente ❌', sucesso: false });
+  }
+
+  const novosNumeros = rifa.numeros.map(n => {
+    if (Number(n.numero) === Number(numero)) {
+      return {
+        ...n,
+        status: 'vendido',
+        pagoEm: Date.now()
+      };
+    }
+
+    return n;
+  });
+
+  await ref.update({ numeros: novosNumeros });
+
+  res.json({ mensagem: `Pagamento confirmado para o número ${numero} ✅`, sucesso: true });
+});
+
+// Cancelar reserva
+app.post('/cancelar-reserva', async (req, res) => {
+  const { rifaId, numero, usuario } = req.body;
+
+  const ref = db.collection('rifas').doc(rifaId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (usuario && rifa.usuario !== usuario) {
+    return res.json({ mensagem: 'Sem permissão ❌', sucesso: false });
+  }
+
+  const numeroAtual = rifa.numeros.find(n => Number(n.numero) === Number(numero));
+
+  if (!numeroAtual) {
+    return res.json({ mensagem: 'Número não encontrado ❌', sucesso: false });
+  }
+
+  if (numeroAtual.status !== 'pendente') {
+    return res.json({ mensagem: 'Esse número não está pendente ❌', sucesso: false });
+  }
+
+  const novosNumeros = rifa.numeros.map(n => {
+    if (Number(n.numero) === Number(numero)) {
+      return {
+        numero: n.numero,
+        status: 'disponivel',
+        comprador: null
+      };
+    }
+
+    return n;
+  });
+
+  await ref.update({ numeros: novosNumeros });
+
+  res.json({ mensagem: `Reserva do número ${numero} cancelada ✅`, sucesso: true });
+});
+
+// Sortear ganhador
+app.post('/sortear-ganhador', async (req, res) => {
+  await liberarReservasExpiradas();
+
+  const { rifaId, usuario } = req.body;
+
+  const ref = db.collection('rifas').doc(rifaId);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (rifa.usuario !== usuario) {
+    return res.json({ mensagem: 'Sem permissão ❌', sucesso: false });
+  }
+
+  if (rifa.ganhador) {
+    return res.json({ mensagem: 'Já sorteada 🏆', sucesso: true });
+  }
+
+  const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
+
+  if (vendidos.length === 0) {
+    return res.json({ mensagem: 'Sem números pagos para sortear ❌', sucesso: false });
+  }
+
+  const ganhador = vendidos[Math.floor(Math.random() * vendidos.length)];
+
+  await ref.update({
+    ganhador: {
+      numero: ganhador.numero,
+      comprador: ganhador.comprador
+    }
+  });
+
+  res.json({
+    mensagem: `Ganhador: ${ganhador.comprador} (${ganhador.numero}) 🏆`,
+    sucesso: true
+  });
+});
+
+// Rota extra para o botão antigo de sortear funcionar
+app.get('/sortear-rifa/:id', async (req, res) => {
+  await liberarReservasExpiradas();
+
+  const id = req.params.id;
+
+  const ref = db.collection('rifas').doc(id);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+
+  if (rifa.ganhador) {
+    return res.json({ mensagem: 'Já sorteada 🏆', sucesso: true });
+  }
+
+  const vendidos = rifa.numeros.filter(n => n.status === 'vendido');
+
+  if (vendidos.length === 0) {
+    return res.json({ mensagem: 'Sem números pagos para sortear ❌', sucesso: false });
+  }
+
+  const ganhador = vendidos[Math.floor(Math.random() * vendidos.length)];
+
+  await ref.update({
+    ganhador: {
+      numero: ganhador.numero,
+      comprador: ganhador.comprador
+    }
+  });
+
+  res.json({
+    mensagem: `Ganhador: ${ganhador.comprador} (${ganhador.numero}) 🏆`,
+    sucesso: true,
+    numero: ganhador.numero,
+    comprador: ganhador.comprador
+  });
+});
+
+// Excluir rifa
+app.delete('/excluir-rifa/:id', async (req, res) => {
+  await liberarReservasExpiradas();
+
+  const id = req.params.id;
+
+  const ref = db.collection('rifas').doc(id);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    return res.json({ mensagem: 'Rifa não encontrada ❌', sucesso: false });
+  }
+
+  const rifa = doc.data();
+  const temVendidos = rifa.numeros.some(n => n.status === 'vendido');
+
+  if (temVendidos && !rifa.ganhador) {
+    return res.json({
+      mensagem: 'Sorteie o ganhador antes de excluir ❌',
+      sucesso: false
+    });
+  }
+
+  await ref.delete();
+
+  res.json({ mensagem: 'Rifa excluída 🗑️', sucesso: true });
+});
+
+// Render
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
