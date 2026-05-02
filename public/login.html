@@ -22,7 +22,7 @@
         <label>Senha</label>
         <input type="password" placeholder="Digite sua senha" id="senha" required>
 
-        <button type="submit" class="auth-btn">Entrar agora</button>
+        <button type="submit" class="auth-btn" id="btnLogin">Entrar agora</button>
       </form>
 
       <p id="msg" class="auth-msg"></p>
@@ -37,6 +37,7 @@
   <script>
     const form = document.getElementById('formLogin');
     const msg = document.getElementById('msg');
+    const btnLogin = document.getElementById('btnLogin');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -51,6 +52,8 @@
         }
 
         msg.innerText = "Entrando...";
+        btnLogin.disabled = true;
+        btnLogin.innerText = "Entrando...";
 
         const resposta = await fetch('/login', {
           method: 'POST',
@@ -59,20 +62,22 @@
         });
 
         const dados = await resposta.json();
-
-        msg.innerText = dados.mensagem;
+        msg.innerText = dados.mensagem || "Resposta recebida";
 
         if (dados.sucesso) {
           localStorage.setItem('usuario', email);
-
-          setTimeout(() => {
-            window.location.href = "/painel.html";
-          }, 500);
+          window.location.href = "/painel.html";
+          return;
         }
+
+        btnLogin.disabled = false;
+        btnLogin.innerText = "Entrar agora";
 
       } catch (erro) {
         console.error(erro);
         msg.innerText = "Erro ao conectar com o servidor ❌";
+        btnLogin.disabled = false;
+        btnLogin.innerText = "Entrar agora";
       }
     });
   </script>
