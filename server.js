@@ -6,10 +6,8 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
-// Tempo limite da reserva: 10 minutos
 const TEMPO_LIMITE_RESERVA = 10 * 60 * 1000;
 
-// Firebase
 let serviceAccount;
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -24,14 +22,12 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// Liberar reservas expiradas
 async function liberarReservasExpiradas() {
   const snapshot = await db.collection('rifas').get();
   const agora = Date.now();
 
   snapshot.forEach(async (doc) => {
     const rifa = doc.data();
-
     if (!rifa.numeros) return;
 
     let alterou = false;
@@ -46,7 +42,12 @@ async function liberarReservasExpiradas() {
           return {
             numero: n.numero,
             status: 'disponivel',
-            comprador: null
+            comprador: null,
+            whatsapp: null,
+            compradorEmail: null,
+            compradorUid: null,
+            tipoLogin: null,
+            reservadoEm: null
           };
         }
       }
@@ -64,18 +65,13 @@ async function liberarReservasExpiradas() {
   });
 }
 
-// Roda automaticamente a cada 1 minuto
 setInterval(liberarReservasExpiradas, 60 * 1000);
-
-// Roda também quando iniciar o servidor
 liberarReservasExpiradas();
 
-// Rota inicial
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
-// Cadastro
 app.post('/cadastro', async (req, res) => {
   const { nome, email, senha } = req.body;
 
@@ -97,7 +93,6 @@ app.post('/cadastro', async (req, res) => {
   res.json({ mensagem: 'Conta criada com sucesso 🚀', sucesso: true });
 });
 
-// Login
 app.post('/login', async (req, res) => {
   const { email, senha } = req.body;
 
@@ -113,7 +108,6 @@ app.post('/login', async (req, res) => {
   res.json({ mensagem: 'Login realizado com sucesso 🚀', sucesso: true });
 });
 
-// Criar rifa
 app.post('/criar-rifa', async (req, res) => {
   const { nome, valor, quantidade, usuario, premio, chavePix } = req.body;
 
@@ -123,7 +117,12 @@ app.post('/criar-rifa', async (req, res) => {
     numeros.push({
       numero: i,
       status: 'disponivel',
-      comprador: null
+      comprador: null,
+      whatsapp: null,
+      compradorEmail: null,
+      compradorUid: null,
+      tipoLogin: null,
+      reservadoEm: null
     });
   }
 
@@ -144,7 +143,6 @@ app.post('/criar-rifa', async (req, res) => {
   res.json({ mensagem: 'Rifa criada com sucesso 🚀', sucesso: true });
 });
 
-// Listar rifas do usuário
 app.get('/rifas/:usuario', async (req, res) => {
   const usuario = req.params.usuario;
 
@@ -164,12 +162,10 @@ app.get('/rifas/:usuario', async (req, res) => {
   res.json(rifas);
 });
 
-// Listar rifas públicas
 app.get('/rifas-publicas', async (req, res) => {
   await liberarReservasExpiradas();
 
   const snapshot = await db.collection('rifas').get();
-
   const rifas = [];
 
   snapshot.forEach(doc => {
@@ -182,7 +178,6 @@ app.get('/rifas-publicas', async (req, res) => {
   res.json(rifas);
 });
 
-// Buscar rifa
 app.get('/rifa/:id', async (req, res) => {
   try {
     await liberarReservasExpiradas();
@@ -205,11 +200,19 @@ app.get('/rifa/:id', async (req, res) => {
   }
 });
 
-// Comprar vários números - fica PENDENTE
 app.post('/comprar-numero', async (req, res) => {
   await liberarReservasExpiradas();
 
-  const { rifaId, comprador, whatsapp, quantidade } = req.body;
+  const {
+    rifaId,
+    comprador,
+    whatsapp,
+    quantidade,
+    compradorEmail,
+    compradorNomeGoogle,
+    compradorUid,
+    tipoLogin
+  } = req.body;
 
   const ref = db.collection('rifas').doc(rifaId);
   const doc = await ref.get();
@@ -228,11 +231,13 @@ app.post('/comprar-numero', async (req, res) => {
   }
 
   const qtd = Number(quantidade) || 1;
-
   const disponiveis = rifa.numeros.filter(n => n.status === 'disponivel');
 
   if (disponiveis.length === 0) {
-    return res.json({ mensagem: 'Todos os números já foram reservados ou vendidos ❌', sucesso: false });
+    return res.json({
+      mensagem: 'Todos os números já foram reservados ou vendidos ❌',
+      sucesso: false
+    });
   }
 
   if (qtd > disponiveis.length) {
@@ -253,8 +258,12 @@ app.post('/comprar-numero', async (req, res) => {
         return {
           ...n,
           status: 'pendente',
-          comprador: comprador || 'Comprador',
+          comprador: comprador || compradorNomeGoogle || 'Comprador',
           whatsapp: whatsapp || '',
+          compradorEmail: compradorEmail || '',
+          compradorNomeGoogle: compradorNomeGoogle || '',
+          compradorUid: compradorUid || '',
+          tipoLogin: tipoLogin || 'normal',
           reservadoEm: Date.now()
         };
       }
@@ -274,7 +283,6 @@ app.post('/comprar-numero', async (req, res) => {
   });
 });
 
-// Confirmar pagamento
 app.post('/confirmar-pagamento', async (req, res) => {
   const { rifaId, numero, usuario } = req.body;
 
@@ -322,7 +330,6 @@ app.post('/confirmar-pagamento', async (req, res) => {
   res.json({ mensagem: `Pagamento confirmado para o número ${numero} ✅`, sucesso: true });
 });
 
-// Cancelar reserva
 app.post('/cancelar-reserva', async (req, res) => {
   const { rifaId, numero, usuario } = req.body;
 
@@ -354,7 +361,13 @@ app.post('/cancelar-reserva', async (req, res) => {
       return {
         numero: n.numero,
         status: 'disponivel',
-        comprador: null
+        comprador: null,
+        whatsapp: null,
+        compradorEmail: null,
+        compradorNomeGoogle: null,
+        compradorUid: null,
+        tipoLogin: null,
+        reservadoEm: null
       };
     }
 
@@ -366,7 +379,6 @@ app.post('/cancelar-reserva', async (req, res) => {
   res.json({ mensagem: `Reserva do número ${numero} cancelada ✅`, sucesso: true });
 });
 
-// Sortear ganhador
 app.post('/sortear-ganhador', async (req, res) => {
   await liberarReservasExpiradas();
 
@@ -400,7 +412,9 @@ app.post('/sortear-ganhador', async (req, res) => {
   await ref.update({
     ganhador: {
       numero: ganhador.numero,
-      comprador: ganhador.comprador
+      comprador: ganhador.comprador,
+      compradorEmail: ganhador.compradorEmail || '',
+      whatsapp: ganhador.whatsapp || ''
     }
   });
 
@@ -410,7 +424,6 @@ app.post('/sortear-ganhador', async (req, res) => {
   });
 });
 
-// Rota extra para o botão antigo de sortear funcionar
 app.get('/sortear-rifa/:id', async (req, res) => {
   await liberarReservasExpiradas();
 
@@ -440,7 +453,9 @@ app.get('/sortear-rifa/:id', async (req, res) => {
   await ref.update({
     ganhador: {
       numero: ganhador.numero,
-      comprador: ganhador.comprador
+      comprador: ganhador.comprador,
+      compradorEmail: ganhador.compradorEmail || '',
+      whatsapp: ganhador.whatsapp || ''
     }
   });
 
@@ -452,7 +467,6 @@ app.get('/sortear-rifa/:id', async (req, res) => {
   });
 });
 
-// Excluir rifa
 app.delete('/excluir-rifa/:id', async (req, res) => {
   await liberarReservasExpiradas();
 
@@ -480,7 +494,6 @@ app.delete('/excluir-rifa/:id', async (req, res) => {
   res.json({ mensagem: 'Rifa excluída 🗑️', sucesso: true });
 });
 
-// Render
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {

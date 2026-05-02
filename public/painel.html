@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel | RifaPro</title>
   <link rel="stylesheet" href="/style.css">
+
+  <script>
+    const usuarioSalvo = localStorage.getItem('usuario');
+
+    if (!usuarioSalvo) {
+      window.location.replace("/login.html");
+    }
+  </script>
 </head>
 <body>
 
@@ -78,15 +86,29 @@
   <script>
     const form = document.getElementById('formRifa');
     const lista = document.getElementById('lista');
-    const usuario = localStorage.getItem('usuario');
+
+    let dadosUsuario = null;
+    let usuario = '';
+
+    try {
+      dadosUsuario = JSON.parse(usuarioSalvo);
+      usuario = dadosUsuario.email || dadosUsuario.nome || '';
+    } catch {
+      usuario = usuarioSalvo;
+    }
 
     if (!usuario) {
+      localStorage.clear();
       window.location.replace("/login.html");
     }
 
     const usuarioLogado = document.getElementById('usuarioLogado');
     if (usuarioLogado) {
-      usuarioLogado.innerText = "Logado como: " + usuario;
+      if (dadosUsuario && dadosUsuario.nome) {
+        usuarioLogado.innerText = "Logado como: " + dadosUsuario.nome + " (" + usuario + ")";
+      } else {
+        usuarioLogado.innerText = "Logado como: " + usuario;
+      }
     }
 
     const campoValor = document.getElementById('valor');
@@ -102,7 +124,7 @@
 
     async function carregarRifas() {
       try {
-        const res = await fetch(`/rifas/${usuario}`);
+        const res = await fetch(`/rifas/${encodeURIComponent(usuario)}`);
 
         if (!res.ok) {
           throw new Error("Erro ao carregar rifas");
@@ -383,6 +405,7 @@
 
     function sair() {
       localStorage.removeItem('usuario');
+      localStorage.removeItem('usuarioGoogle');
       window.location.replace("/login.html");
     }
 

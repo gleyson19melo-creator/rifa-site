@@ -15,25 +15,22 @@
 
       <h1 id="nomeRifa">Carregando...</h1>
 
-      <p>
-        🎁 Prêmio:
-        <strong id="premioRifa">Carregando...</strong>
-      </p>
-
-      <p>
-        💰 Valor do número:
-        <strong id="valorRifa">Carregando...</strong>
-      </p>
-
-      <p>
-        🎟️ Disponíveis:
-        <strong id="disponiveis">0</strong>
-      </p>
-
+      <p>🎁 Prêmio: <strong id="premioRifa">Carregando...</strong></p>
+      <p>💰 Valor do número: <strong id="valorRifa">Carregando...</strong></p>
+      <p>🎟️ Disponíveis: <strong id="disponiveis">0</strong></p>
       <p id="totalNumerosInfo">Total: 0 números</p>
+
+      <p id="usuarioCompraInfo" style="margin-top:12px;"></p>
     </section>
 
     <section id="resultadoFinal" style="display:none;"></section>
+
+    <section id="areaLoginNecessario" class="rifa-compra" style="display:none;">
+      <h2>Entre para comprar 🔒</h2>
+      <p>Para participar dessa rifa, faça login ou crie sua conta.</p>
+      <a href="/login.html" class="btn">Entrar agora</a>
+      <a href="/cadastro.html" class="btn btn-outline">Criar conta</a>
+    </section>
 
     <section id="areaCompra" class="rifa-compra">
       <h2>Comprar número</h2>
@@ -72,13 +69,62 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
+
     let rifaAtual = null;
+    let usuarioLogado = null;
+    let usuarioEmail = '';
+    let usuarioNome = '';
+
+    function pegarUsuarioLogado() {
+      const usuarioSalvo = localStorage.getItem("usuario");
+
+      if (!usuarioSalvo) return null;
+
+      try {
+        const dados = JSON.parse(usuarioSalvo);
+        return dados;
+      } catch {
+        return {
+          email: usuarioSalvo,
+          nome: usuarioSalvo,
+          tipo: "normal"
+        };
+      }
+    }
+
+    function prepararUsuario() {
+      usuarioLogado = pegarUsuarioLogado();
+
+      const areaCompra = document.getElementById("areaCompra");
+      const areaLoginNecessario = document.getElementById("areaLoginNecessario");
+      const usuarioCompraInfo = document.getElementById("usuarioCompraInfo");
+      const compradorInput = document.getElementById("comprador");
+
+      if (!usuarioLogado || !usuarioLogado.email) {
+        if (areaCompra) areaCompra.style.display = "none";
+        if (areaLoginNecessario) areaLoginNecessario.style.display = "block";
+        if (usuarioCompraInfo) usuarioCompraInfo.innerText = "🔒 Faça login para comprar números.";
+        return;
+      }
+
+      usuarioEmail = usuarioLogado.email;
+      usuarioNome = usuarioLogado.nome || usuarioLogado.email;
+
+      if (areaCompra) areaCompra.style.display = "block";
+      if (areaLoginNecessario) areaLoginNecessario.style.display = "none";
+
+      if (usuarioCompraInfo) {
+        usuarioCompraInfo.innerText = "👤 Comprando como: " + usuarioNome + " (" + usuarioEmail + ")";
+      }
+
+      if (compradorInput && !compradorInput.value) {
+        compradorInput.value = usuarioNome;
+      }
+    }
 
     function setTexto(elementId, texto) {
       const elemento = document.getElementById(elementId);
-      if (elemento) {
-        elemento.innerText = texto;
-      }
+      if (elemento) elemento.innerText = texto;
     }
 
     async function carregarRifa() {
@@ -88,11 +134,11 @@
           return;
         }
 
+        prepararUsuario();
+
         const res = await fetch(`/rifa/${id}`);
 
-        if (!res.ok) {
-          throw new Error("Erro ao buscar rifa");
-        }
+        if (!res.ok) throw new Error("Erro ao buscar rifa");
 
         const rifa = await res.json();
 
@@ -104,10 +150,12 @@
         rifaAtual = rifa;
 
         const areaCompra = document.getElementById('areaCompra');
+        const areaLoginNecessario = document.getElementById('areaLoginNecessario');
         const resultadoFinal = document.getElementById('resultadoFinal');
 
         if (rifa.ganhador) {
           if (areaCompra) areaCompra.style.display = "none";
+          if (areaLoginNecessario) areaLoginNecessario.style.display = "none";
 
           if (resultadoFinal) {
             resultadoFinal.style.display = "block";
@@ -122,8 +170,8 @@
             `;
           }
         } else {
-          if (areaCompra) areaCompra.style.display = "block";
           if (resultadoFinal) resultadoFinal.style.display = "none";
+          prepararUsuario();
         }
 
         setTexto('nomeRifa', rifa.nome);
@@ -170,6 +218,14 @@
 
     async function comprarNumero() {
       try {
+        prepararUsuario();
+
+        if (!usuarioLogado || !usuarioEmail) {
+          alert("Você precisa entrar para comprar essa rifa 🔒");
+          window.location.href = "/login.html";
+          return;
+        }
+
         const compradorInput = document.getElementById('comprador');
         const whatsappInput = document.getElementById('whatsapp');
         const quantidadeInput = document.getElementById('quantidadeCompra');
@@ -189,13 +245,27 @@
           return;
         }
 
+        if (!quantidade || Number(quantidade) < 1) {
+          alert("Digite uma quantidade válida");
+          return;
+        }
+
         resultado.innerText = "Reservando número...";
         resultado.style.display = "block";
 
         const res = await fetch('/comprar-numero', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rifaId: id, comprador, whatsapp, quantidade })
+          body: JSON.stringify({
+            rifaId: id,
+            comprador,
+            whatsapp,
+            quantidade,
+            compradorEmail: usuarioEmail,
+            compradorNomeGoogle: usuarioNome,
+            compradorUid: usuarioLogado.uid || null,
+            tipoLogin: usuarioLogado.tipo || "normal"
+          })
         });
 
         const dados = await res.json();
